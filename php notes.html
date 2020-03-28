@@ -1,0 +1,265 @@
+<table>
+  <caption>
+    Loops and Iteration
+  </caption>
+  <thead>
+    <tr>
+      <th>lang</th>
+      <th>for loop</th>
+      <th>foreach loop</th>
+      <th>while loop</th>
+      <th>do...while loop</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td>php</td>
+      <td>
+        <pre>
+for(expr1; expr2; expr3){ 
+    statement
+}
+      </pre
+        >
+      </td>
+      <td>
+        <pre>
+foreach (array_expression as $value)
+  statement
+foreach (array_expression as $key => $value)
+  statement        </pre
+        >
+      </td>
+      <td>
+        <pre>
+while (expr)
+  statement        </pre
+        >
+      </td>
+      <td>
+        <pre>
+do 
+  statement
+while (expr)          
+        </pre>
+      </td>
+    </tr>
+    <tr>
+      <td>js</td>
+      <td>
+        <pre>
+for([initialExpression]; 
+    [condition]; 
+    [incrementExpression]){
+    statement
+}
+      </pre
+        >
+      </td>
+      <td>
+        <pre>
+array.forEach(function(
+      currentValue, index, arr), thisValue)
+<hr>
+for (variable in object)
+  statement
+<hr>
+for (variable of object)
+  statement
+        </pre>
+      </td>
+      <td>
+        <pre>
+while (condition)
+    statement        </pre
+        >
+      </td>
+      <td>
+        <pre>
+do
+    statement
+while (condition);        </pre
+        >
+      </td>
+    </tr>
+    <tr>
+      <td>mySQL</td>
+      <td>
+        <pre>
+[label]: LOOP
+    ...
+    -- terminate the loop
+    IF condition THEN
+        LEAVE [label];
+    END IF;
+    ...
+END LOOP;        </pre
+        >
+      </td>
+      <td>[cursor]</td>
+      <td>
+        <pre>
+[begin_label:] WHILE search_condition DO
+    statement_list
+END WHILE [end_label]
+        </pre>
+      </td>
+      <td>
+        <pre>
+[begin_label:] REPEAT
+    statement
+UNTIL search_condition
+END REPEAT [end_label]        </pre
+        >
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <caption>
+    Variables, Constants &amp; Data Types
+  </caption>
+  <thead>
+    <tr>
+      <th>lang</th>
+      <th>variables &amp; constants</th>
+      <th>array</th>
+      <th>data types</th>
+      <th>operation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>php</td>
+      <td>
+        <pre><font color="#ff0000">$</font>_xxx, <font color="#ff0000">$</font>xxx;
+<font color="#ff0000">echo</font> $_xxx;
+<hr>
+<font color="#ff0000">define</font>('PI', 3.14);
+<font color="#ff0000">const</font> PI = 3.14;      </pre>
+      </td>
+      <td>
+        <pre>Zero Indexed : 
+  $cars = array('BMW','Honda')
+  $ppl = ['Kev', 'Mike']
+  echo $cars[0]; //read
+  $cars[] = 'GM'; //adding
+Associative
+  $ages = ['Pete' =&gt; 35, 'Mike' =&gt; 39];
+  echo $ages['Pete']; //read
+  $ages['Brad'] = 40; //adding
+Multi-dimensional  
+  $cars = arrey(array('Honda', 20, 10), 
+          array('BMW', 30, 12));
+  echo $cars[1][0]; //reading
+<hr>
+echo $cars[0];
+<font color="#ff0000">var_dump</font>($cars);
+<font color="#ff0000">print_r</font>($cars);
+        </pre>
+      </td>
+      <td>
+        <pre>
+string,
+integer,
+float,
+boolean,
+array,
+object,
+NULL,
+resource
+        </pre>
+      </td>
+      <td>
+        <pre>
+$str = $str1 . ' ' . $str2;
+$str = "$str1 $str2";
+        </pre>
+      </td>
+    </tr>
+    <tr>
+      <td>js</td>
+      <td>
+        <pre><font color="#ff0000">var</font> _xxx, $xxx; 
+<font color="#ff0000">let</font> _xxx, $xxx;
+<font color="#ff0000">console.log</font>(_xxx);
+<hr>
+<font color="#ff0000">const</font> XXX;
+      </pre>
+      </td>
+      <td>
+        <pre>
+var fruits = ['Apple', 'Banana']; 
+<hr>
+var arr = { "one": 1, "two": 2, "three": 3 };
+var y = arr["one"]; //reading
+for(var key in arr)
+{
+  var value = arr[key];
+  document.write(key + " = " + value );
+}
+var o = new Object();
+o["one"] = 1; || o.one =1;
+o["two"] = 2; || o.two =2;
+o["three"] = 3; || o.three =3;
+for(var i in o)
+{
+  document.write(i + "=" + o[i] );
+}        </pre>
+      </td>
+      <td>
+        <pre>
+primitives:          
+  Boolean,
+  null,
+  undefined,
+  Number,
+  Bigint,
+  String,
+  Symbol
+and
+  Object          
+        </pre>
+      </td>
+      <td>
+        <pre>
+str = str1 + str2;
+"".concat(str1, " ", str2);
+strs.join(" "); // string array;
+        </pre>
+      </td>
+    </tr>
+    <tr>
+      <td>mySQL</td>
+      <td>
+        <pre></pre>
+      </td>
+      <td><br /></td>
+      <td>
+        <pre></pre>
+      </td>
+      <td>
+        <pre></pre>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<style>
+  table,
+  th,
+  td {
+    border: 1px solid black;
+  }
+
+  th,
+  td {
+    padding: 15px;
+  }
+
+  td {
+    text-align: left;
+  }
+</style>

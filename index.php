@@ -42,6 +42,7 @@ get_header();
 <?php 
   //do shortcode
   echo do_shortcode("[wpdatatable id=1]");
+  echo do_shortcode("[wpdatatable id=3]");
   while(have_posts()){
     the_post();
     echo the_title();
