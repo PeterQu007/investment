@@ -1,0 +1,102 @@
+{
+  "manifest_version": 2,
+  "name": "Investment Manager",
+  "version": "1.0",
+  "description": "Investment Manager for quick data checking",
+  "icons": {
+    "128": "icon128.png",
+    "48": "icon48.png",
+    "16": "icon16.png"
+  },
+  "browser_action": {
+    "default_icon": "icon16.png",
+    "default_popup": "popup.html"
+  },
+
+  "options_page": "options.html",
+
+  "background": {
+    "scripts": ["jquery-3.4.1.min.js", "eventPage.js"],
+    "persistent": false
+  },
+
+  "content_scripts": [
+    {
+      //TMX Login Page
+      //Function: Automatically login with Username and Password
+      "run_at": "document_end",
+      "matches": ["https://web.tmxmoney.com/account/login-register.php"],
+      "js": ["jquery-3.4.1.min.js", "tmxLogin.js"],
+      "css": ["style.css"]
+    },
+    {
+      //TMX Portfolio Change
+      //Function: Automatically Change to Legacy Page
+      "run_at": "document_end",
+      "matches": ["https://web.tmxmoney.com/account/portfolio.php"],
+      "js": ["jquery-3.4.1.min.js", "tmxGoLegacy.js"],
+      "css": ["style.css"]
+    },
+    {
+      //TMX Portfolio Change
+      //Function: Automatically Change to Legacy Page
+      "run_at": "document_end",
+      "matches": ["https://web.tmxmoney.com/account/legacy-portfolio.php"],
+      "js": ["jquery-3.4.1.min.js", "tmxLegacyPage.js"],
+      "css": ["style.css"]
+    },
+    {
+      //SEDI Insider transaction detail - Search form
+      //Function: Automatically Change parameters
+      "run_at": "document_end",
+      "matches": ["https://www.sedi.ca/sedi/SVTItdController"],
+      "js": [
+        "jquery-3.4.1.min.js",
+        "./jquery-ui/jquery-ui.min.js",
+        "sediSearch.js"
+      ],
+      "css": ["./jquery-ui/jquery-ui.css", "style.css"]
+    },
+    {
+      //SEDI Insider transaction detail - Search form
+      //Function: Automatically Change parameters
+      "run_at": "document_end",
+      "matches": ["https://www.sedi.ca/sedi/SVTItdController?locale=en_CA"],
+      "js": [
+        "jquery-3.4.1.min.js",
+        "./jquery-ui/jquery-ui.min.js",
+        "sediSearchResult.js"
+      ],
+      "css": ["./jquery-ui/jquery-ui.css", "style.css"]
+    },
+    {
+      //TMX - Chart Page
+      //Function: Automatically Change parameters
+      "run_at": "document_idle",
+      "matches": ["https://web.tmxmoney.com/charting.php?qm_symbol=*"],
+      "js": ["jquery-3.4.1.min.js", "tmxCharting.js"],
+      "css": ["style.css"]
+    },
+    {
+      //https://seekingalpha.com/article/
+      "run_at": "document_idle",
+      "matches": ["https://seekingalpha.com/article/*"],
+      "js": ["jquery-3.4.1.min.js", "seekingAlphaArticle.js"],
+      "css": ["style.css"]
+    },
+    {
+      //https://stockhouse.com/
+      "run_at": "document_idle",
+      "matches": ["https://stockhouse.com/companies/bullboard?symbol=*"],
+      "js": ["jquery-3.4.1.min.js", "stockHouseBullboard.js"],
+      "css": ["style.css"]
+    }
+  ],
+
+  "permissions": [
+    "storage",
+    "notifications",
+    "contextMenus",
+    "http://investment.local/"
+  ]
+}

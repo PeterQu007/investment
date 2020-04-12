@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Investment Manager</title>
+    <script src="jquery-3.4.1.min.js"></script>
+    <script src="popup.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body id="popup">
+    <h1>Investment Manager</h1>
+    <!--
+      <h2>Total Spend: <span id="total">0</span></h2>
+    <h2>Limit: <span id="limit"></span></h2>
+    <h3>Enter Amount</h3>
+    <input type="text" id="amount" />
+    <input type="submit" id="spendAmount" value="Spend" />
+
+    -->
+    <hr />
+    <h2>StockHouse | TMX | StockChase | SEDI</h2>
+    <ul>
+      <li>
+        <a
+          href="https://web.tmxmoney.com/account/legacy-portfolio.php"
+          target="_blank"
+          >TMX Money</a
+        >
+      </li>
+      <hr />
+      <li>
+        HOT.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=ahotf"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=HOT.UN"
+          target="_blank"
+          >&nbspTmx Price&nbsp |&nbsp</a
+        ><a href="https://seekingalpha.com/symbol/AHOTF?s=ahotf" target="_blank"
+          >&nbspSeeking Alpha</a
+        >
+      </li>
+      <li>
+        IVQ.U<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.ivq"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=IVQ.U"
+          target="_blank"
+          >&nbspTmx Price&nbsp|&nbsp</a
+        ><a href="https://seekingalpha.com/symbol/MHIVF?s=mhivf" target="_blank"
+          >&nbspSeeking Alpha&nbsp</a
+        >
+      </li>
+      <li>
+        SOT.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.sot.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=sot.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        MRT.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.mrt.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=mrt.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        SRU.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.sru.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=sru.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        HR.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.hr.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=hr.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        SRT.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.srt.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=srt.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <hr />
+      <li>
+        APR.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.apr.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=apr.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+
+      <li>
+        AX.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.ax.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=ax.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        BPY.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.bpy.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=bpy.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        CUF.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.cuf.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=cuf.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        DIR.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.dir.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=dir.un"
+          target="_blank"
+          >&nbspTmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        NXR.UN<a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.nxr.un"
+          target="_blank"
+          >&nbspStockhouse&nbsp&nbsp|&nbsp&nbsp</a
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=nxr.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <hr />
+      <li>
+        AP.UN<span>&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.ap.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=ap.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        BEI.UN<span>&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.bei.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=bei.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        BTB.UN<span>&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.btb.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=btb.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        CAR.UN<span>&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.car.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=car.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Crombie Nova Scotia">CRR.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.crr.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=crr.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="CT(Canadian Tire) Toronto">CRT.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.crt.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=crt.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Chartwell Retirement Mississauga">CSH.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.csh.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=csh.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Dream Office Toronto">D.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.d.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=d.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Medical Facilities Toronto">DR&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.dr.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=dr"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Extendicare Markham ON">EXE&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.exe.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=exe"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="First Capital Totonto">FCR&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.fcr.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=fcr"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="FirstService Totonto">FSV&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.fsv.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=fsv"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <hr />
+      <li>
+        <span title="Granite Totonto">GRT&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.grt.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=grt"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="BSR Totonto">HOM&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.hom.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=hom.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="InterRent Ottawa">IIP&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.iip.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=iip.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Inovalis Totonto">INO.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.ino.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=ino.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Killam Apartment Halifax NS">KMP.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.kmp.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=kmp.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Lanesborough Winnipeg MB">LRT.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.lrt.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=lrt.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Minto Apartment Ottawa">MI.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.miun"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=mi.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Melcor Edmonton AB">MR.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.mr.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=mr.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Morguard North American Residential Mississauga ON"
+          >MRG.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.mrg.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=mrg.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Northview Apartment Calgary AB">NVU.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.nvu.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=nvu.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Northwest Healthcare Toronto">NWH.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.nwh.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=nwh.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Partners Barrie ON">PAR.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.par.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=par.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <hr />
+      <li>
+        <span title="Plaza Retail Fredericton NB">PLZ.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.plz.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=plz.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="PRO Montreal QC">PRV.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.prv.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=prv.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="RioCan Toronto">REI.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.rei.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=rei.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Sienna Senior Living Markham ON">SIA&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.sia.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=sia"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Summit Industrial Brampton ON">SMU.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.smu.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=smu.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="New Senior New York USA">SNR:US&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=snrw"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=snr:us"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="True North Toronto">TNT.UN&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.tnt.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=tnt.un"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="Wall Financial Vancouver">WFC&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.wfc.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=wfc"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+      <li>
+        <span title="WPT Industrial Toronto">WIR.U&nbsp</span
+        ><a
+          href="https://stockhouse.com/companies/bullboard?symbol=t.wir.un"
+          target="_blank"
+          >Stockhouse</a
+        ><span>&nbsp&nbsp|&nbsp&nbsp</span
+        ><a
+          href="https://web.tmxmoney.com/charting.php?qm_symbol=wir.u"
+          target="_blank"
+          >Tmx Price&nbsp</a
+        >
+      </li>
+    </ul>
+  </body>
+</html>

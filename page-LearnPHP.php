@@ -1,6 +1,13 @@
 <?php 
-// if (!defined('ABSPATH')) exit;
-// get_header();
+if (!defined('ABSPATH')) exit;
+get_header();
+
+while(have_posts()){
+  the_post();
+  echo the_content() . "<br>";
+  echo get_the_ID();
+  echo '<hr>';
+}
 
 //http://investment.local/wp-content/themes/investment/LearnPHP.php
 echo $_SERVER['SERVER_NAME'] . '<br>'; //investment.local
@@ -23,8 +30,8 @@ echo date('d-m-Y') . '<br>'; // today
 echo date('d-m-Y', time()) . '<br>'; //today
 echo date('d-m-Y', strtotime('today')). '<br>'; //today
 
-//echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
+echo get_theme_file_uri('/page-LearnPHP.php') . '<br>'; //file uri
 
-// get_footer();
+get_footer();
 
 ?>

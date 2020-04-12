@@ -10,7 +10,10 @@ echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
   <a href="https://stockhouse.com/" target="_blank"> StockHouse </a> | 
   <a href="https://web.tmxmoney.com/account/login-register.php" target="_blank">TMX</a> | 
   <a href="https://stockchase.com/" target="_blank">StockChase</a> | 
-  <a href="https://www.sedi.ca/sedi/SVTItdController?locale=en_CA" target="_blank"> SEDI </a>
+  <a href="https://www.sedi.ca/sedi/SVTItdController" target="_blank"> SEDI </a> |
+  <a href="https://simplywall.st/stocks/ca/real-estate" target="_blank">Simply Wall St</a> |
+  <a href="https://https://finviz.com/" target="_blank">finviz</a> |
+  <a href="https://finance.yahoo.com/" target="_blank">Yahoo Finance</a>
 </h2>
 
 <form method = "POST" action = "<?php echo $_SERVER["PHP_SELF"] ?>">
