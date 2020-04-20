@@ -52,6 +52,7 @@ echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
 
 <?php 
   //do shortcode
+  echo do_shortcode("[wpdatatable id=4]");
   echo do_shortcode("[wpdatatable id=1]");
   echo do_shortcode("[wpdatatable id=3]");
   while(have_posts()){
