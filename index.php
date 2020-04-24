@@ -4,6 +4,24 @@ get_header();
 echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
 
 ?>
+<script>
+  //'use strict';
+  var name = "windows name";
+  var c = {
+    name: 'The c Object',
+    log: function(){
+      this.name = 'Updated c object';
+      console.log(this);
+
+      var setname = function(newname){
+        this.name = newname;
+      }
+      setname('Updated again! The C Object');
+      console.log(this);
+    }
+  }
+  c.log();
+</script>
 
 <hr />
 <h2>
