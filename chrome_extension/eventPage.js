@@ -19,3 +19,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   });
   return true;
 });
+
+var GoogleFinRefreshCounter = 0;
+//reset the Counter::
+chrome.storage.local.set(
+  { GoogleFinRefreshCounter: GoogleFinRefreshCounter },
+  () => {
+    console.log(GoogleFinRefreshCounter);
+  }
+);
