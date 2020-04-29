@@ -59,7 +59,7 @@ $(document).ready(
     htmlTSXchange.addEventListener("DOMSubtreeModified", (e) => {
       console.log("index changed: ", e.target.textContent);
       let timeTag = new Date();
-      timeLiteral = `${timeTag.getHours()}:${timeTag.getMinutes()}:${timeTag.getSeconds()}`;
+      timeLiteral = `${timeTag.getHours()}:${timeTag.getMinutes()}`;
       document.title = `[${timeLiteral}]${e.target.textContent}`;
     });
   })()

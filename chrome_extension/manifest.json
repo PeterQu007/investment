@@ -97,6 +97,18 @@
       "matches": ["https://www.google.ca/search?safe=active*q=INDEXDJX:+.DJI*"],
       "js": ["jquery-3.4.1.min.js", "googleFinance.js"],
       "css": ["style.css"]
+    },
+    {
+      //https://www.investdirecttrading.hsbc.ca/group-wd-war/group/hsbc/wd/appPage.min.html?channelID=OHI&channelCountryCode=CA&channelGroupMemberID=HCSC&channelBusinessLine=PFS&localeCountry=CA&targetFunction=accountview&locale=en_CA&localeLanguage=en#/currentholdings
+      //https: //investdirecttrading.hsbc.ca/group-wd-war/group/hsbc/wd/appPage.min.html?channelID=OHI&channelCountryCode=CA&channelGroupMemberID=HCSC&channelBusinessLine=PFS&localeCountry=CA&targetFunction=accountview&locale=en_CA&localeLanguage=en#/accountview
+      //        "https://investdirecttrading.hsbc.ca/group-wd-war/group/hsbc/wd/appPage.min.html?*/currentholdings*",
+      "run_at": "document_idle",
+      "matches": [
+        "https://investdirecttrading.hsbc.ca/group-wd-war/group/*",
+        "https://investdirecttrading.hsbc.ca/srbp/stock/?wireFrom=external&locale=en_CA*"
+      ],
+      "js": ["jquery-3.4.1.min.js", "hsbcFinance.js"],
+      "css": ["style.css"]
     }
   ],
 
