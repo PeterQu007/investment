@@ -45,57 +45,110 @@ class HSBCFIN {
   }
 }
 
+class TradeButton {
+  constructor() {
+    this.tradeButton = document.createElement("a");
+    this.tradeButton.classList.add(
+      "button",
+      "secondary",
+      "btnRefresh",
+      "secondaryBtnRefresh"
+    );
+    this.tradeButton.href =
+      "https://investdirecttrading.hsbc.ca/srbp/stock/?wireFrom=external&locale=en_CA";
+    this.tradeButton.innerHTML = '<span class="buttonInner">trade</span>';
+    this.tradeButton.id = "tradeButton";
+  }
+}
+
 $(document).ready(function () {
-  // Select the node that will be observed for mutations
-  const targetNode = document.getElementsByClassName("innerPage-skin")[0];
-  //col0_360 col1_160 col2_160 groupedTable
-  //const targetNode = document.getElementsByClassName("grid-skin")[0];
+  if (
+    document.URL.indexOf("currentholdings") > 0 ||
+    document.URL.indexOf("accountview") > 0 ||
+    document.URL.indexOf("homepage") > 0
+  ) {
+    // Select the node that will be observed for mutations
+    const targetNode = document.getElementsByClassName("innerPage-skin")[0];
+    //col0_360 col1_160 col2_160 groupedTable
+    //const targetNode = document.getElementsByClassName("grid-skin")[0];
 
-  // Options for the observer (which mutations to observe)
-  const config = {
-    attributes: true,
-    childList: true,
-    subtree: true,
-  };
+    // Options for the observer (which mutations to observe)
+    const config = {
+      attributes: true,
+      childList: true,
+      subtree: true,
+    };
 
-  var link;
+    var link;
 
-  // Callback function to execute when mutations are observed
-  const callback = function (mutationsList, observer) {
-    // Use traditional 'for loops' for IE 11
-    for (let mutation of mutationsList) {
-      if (
-        mutation.type === "childList" &&
-        mutation.target.tagName == "TH" &&
-        mutation.target.className.toUpperCase() == "FIRST COL0"
-      ) {
-        // console.log("A child node has been added or removed.", mutation);
-        link = $(mutation.target).find("a.accordionHeading");
-        // console.log(link);
-        if (link.length > 0) {
-          setTimeout(function () {
-            console.log(link);
-            let content = $("div.accordionContent.in.collapse");
-            if (content.length == 0) {
-              $("a.accordionHeading")[0].click();
-            }
-          }, 1000);
-          return;
+    // Callback function to execute when mutations are observed
+    const callback = function (mutationsList, observer) {
+      // Use traditional 'for loops' for IE 11
+
+      for (let mutation of mutationsList) {
+        if (
+          mutation.type === "childList" &&
+          mutation.target.tagName == "DIV" &&
+          mutation.target.classList.toString() == "right widgetMargin"
+        ) {
+          let htmlTradeButton = document.getElementById("tradeButton");
+          if (!htmlTradeButton) {
+            // add tradeButton
+            let tradeButton = new TradeButton();
+            let tradeButtonContainer = document.getElementsByClassName(
+              "right" /* marginBottom20"*/
+            )[0];
+            tradeButtonContainer.appendChild(tradeButton.tradeButton);
+          }
+          continue;
         }
-      } else if (mutation.type === "attributes") {
-        //console.log(
-        //   "The " + mutation.attributeName + " attribute was modified."
-        // );
+
+        if (
+          mutation.type === "childList" &&
+          mutation.target.tagName == "TH" &&
+          mutation.target.className.toUpperCase() == "FIRST COL0"
+        ) {
+          let htmlTradeButton = document.getElementById("tradeButton");
+          if (!htmlTradeButton) {
+            // add tradeButton
+            let tradeButton = new TradeButton();
+            let tradeButtonContainer = document.getElementsByClassName(
+              "right" /* marginBottom20"*/
+            )[0];
+            tradeButtonContainer.appendChild(tradeButton.tradeButton);
+          }
+          // console.log("A child node has been added or removed.", mutation);
+          link = $(mutation.target).find("a.accordionHeading");
+          // console.log(link);
+          if (link.length > 0) {
+            setTimeout(function () {
+              console.log(link);
+              let content = $("div.accordionContent.in.collapse");
+              if (content.length == 0) {
+                $("a.accordionHeading")[0].click();
+              }
+            }, 1000);
+
+            return;
+          }
+        } else if (mutation.type === "attributes") {
+          //console.log(
+          //   "The " + mutation.attributeName + " attribute was modified."
+          // );
+        }
       }
-    }
-  };
+    };
 
-  // Create an observer instance linked to the callback function
-  const observer = new MutationObserver(callback);
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver(callback);
 
-  // Start observing the target node for configured mutations
-  observer.observe(targetNode, config);
+    // Start observing the target node for configured mutations
+    observer.observe(targetNode, config);
 
-  // Later, you can stop observing
-  //observer.disconnect();
+    // Later, you can stop observing
+    //observer.disconnect();
+  }
+
+  const hsbc = new HSBCFIN();
+  hsbc.logMessage();
 });
