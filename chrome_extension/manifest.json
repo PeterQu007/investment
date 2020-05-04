@@ -94,7 +94,7 @@
     {
       //https://www.google.ca/search?safe=active&tbm=fin&sxsrf=ALeKk02ThDRNUpRxw8YnCS96Gl8OC862kQ:1587735274726&q=INDEXDJX:+.DJI&stick=H4sIAAAAAAAAAONgecRozC3w8sc9YSmtSWtOXmNU4eIKzsgvd80rySypFBLjYoOyeKS4uDj0c_UNkgsry3kWsfJ5-rm4Rrh4RVgp6Ll4eQIAqJT5uUkAAAA&sa=X&ved=2ahUKEwjp6qvoloHpAhUoJjQIHRIDBmMQ0uIBMBN6BAgEEAE&biw=1920&bih=1089&dpr=1#scso=_O-uiXpj2IbLB7gLixL2oAw1:0,_3eyiXsr3CP7P0PEPwpKKwAg1:0,_We2iXpTWLcLC0PEP5qCGsAk1:0,_8O2iXpqGDe7A0PEPu4GtiAE1:0,_lfCiXobuHovP0PEPvdOi-AE1:0,_m_GiXoCGL7qs0PEPyPG2uAY1:0,_iPKiXsXmHd280PEP8eei-As1:0,_L_SiXpq6Dp280PEPx6ulqA01:0,_pwWjXr2_C4nA0PEPjbq_2Ac1:0,_BgmjXvWCHYis0PEPhqyieA1:0,_xAmjXoqpNauw0PEPn4--8AE1:0
       "run_at": "document_idle",
-      "matches": ["https://www.google.ca/search?safe=active*q=INDEXDJX:+.DJI*"],
+      "matches": ["https://www.google.ca/search?*q=INDEXDJX:+.DJI*"],
       "js": ["jquery-3.4.1.min.js", "googleFinance.js"],
       "css": ["style.css"]
     },

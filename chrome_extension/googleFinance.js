@@ -79,6 +79,7 @@ $(document).ready(
           if (!refreshTimer) {
             refreshTimer = setInterval(refreshGoogleFinance, refreshInterval);
           }
+          location.reload();
         } else {
           if (refreshTimer) {
             clearInterval(refreshTimer);
@@ -92,5 +93,37 @@ $(document).ready(
       console.log("index changed: ", e.target.textContent);
       document.title = e.target.textContent;
     });
+
+    ////New feature
+    var vis = (function () {
+      var stateKey,
+        eventKey,
+        keys = {
+          hidden: "visibilitychange",
+          webkitHidden: "webkitvisibilitychange",
+          mozHidden: "mozvisibilitychange",
+          msHidden: "msvisibilitychange",
+        };
+      for (stateKey in keys) {
+        if (stateKey in document) {
+          eventKey = keys[stateKey];
+          break;
+        }
+      }
+      return function (c) {
+        if (c) document.addEventListener(eventKey, c);
+        return !document[stateKey];
+      };
+    })();
+
+    var visible = vis(); // gives current state
+
+    vis(refreshVisible); // registers a handler for visibility changes
+
+    function refreshVisible() {
+      if (vis()) {
+        location.reload();
+      }
+    }
   })()
 );
