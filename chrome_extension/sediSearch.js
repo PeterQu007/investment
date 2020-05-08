@@ -113,14 +113,22 @@ chrome.runtime.sendMessage(ticker, (res) => {
           }</span> :: ${r.desc} </a></div>`
         );
         ticks.append(tick1);
+
         //add events
-        $(`#${r.ticker.replace(".", "")}`).click(function () {
+        $(`#${r.ticker.replace(".", "")}`).click(function (e) {
           xTick.val(r.desc.replace("REIT", ""));
           var ts = new Date().getTime();
           chrome.storage.local.set(
             { tstamp: ts, ticker: r.ticker },
             function () {
               console.log("timestamp saved to chrome storage ", ts);
+              // check if it is trigger by real user click
+              if (e.hasOwnProperty("originalEvent")) {
+                // this is a real click
+                btnCheckDone.click();
+              } else {
+                // this is a fake click
+              }
               btnSearch.click();
             }
           );
