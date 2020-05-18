@@ -34,6 +34,26 @@ echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
   <a href="https://finance.yahoo.com/" target="_blank">Yahoo Finance</a>
 </h2>
 
+<hr />
+<h2>
+  <a href="http://learn.idxbroker.com/" target="_blank">IDX Broker Learn |</a>
+  <a href="https://support.idxbroker.com/support/s/" target="_blank">IDX Broker Support |</a>
+  <a href="https://middleware.idxbroker.com/mgmt/login" target="_blank">IDX Dashboard Login |</a>
+  <a href="https://developers.idxbroker.com/" target="_blank" rel="noopener noreferrer">IDX Dev |</a>
+  <a href="https://myhometheme.zendesk.com/hc/en-us/articles/115004872273#table">IDX Broker Integration(MLS) | </a>
+  <a href="https://wordpress.org/plugins/wp-listings/" target="_blank" rel="noopener noreferrer">Impress Import Feature Listings</a>
+</h2>
+
+<hr />
+<h2>
+  <a href="https://realhomes.io/documentation/" target = "_blank">Real Homes Docs</a>
+</h2>
+
+<hr>
+<h2>
+  <a href="https://portal.hostgator.com/login" target = "_blank">Hostgator Portal Login |</a>
+</h2>
+
 <form method = "POST" action = "<?php echo $_SERVER["PHP_SELF"] ?>">
   <label for="name">Name:</label>
   <input name="name" type="text">
