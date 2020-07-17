@@ -133,6 +133,12 @@
       ],
       "js": ["jquery-3.4.1.min.js", "hsbcFinance.js"],
       "css": ["style.css"]
+    },
+    {
+      "run_at": "document_idle",
+      "matches": ["https://statscentre.rebgv.org/stats/market*"],
+      "js": ["jquery-3.4.1.min.js", "marketStats.js"],
+      "css": ["style.css"]
     }
   ],
 
@@ -140,6 +146,9 @@
     "storage",
     "notifications",
     "contextMenus",
-    "http://investment.local/"
+    "http://investment.local/",
+    "https://investment.pidhome.ca/",
+    "http://localhost/pidrealty3/",
+    "https://pidhomes.ca/"
   ]
 }

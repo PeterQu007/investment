@@ -45,6 +45,11 @@ echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
 </h2>
 
 <hr />
+<h3>
+  <a href="https://kb.ihomefinder.com/s/" target="_blank">iHomeFinder KnowledgeBase | </a>
+</h3>
+
+<hr />
 <h2>
   <a href="https://realhomes.io/documentation/" target = "_blank">Real Homes Docs</a>
 </h2>
@@ -52,6 +57,7 @@ echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
 <hr>
 <h2>
   <a href="https://portal.hostgator.com/login" target = "_blank">Hostgator Portal Login |</a>
+  <a href="https://gator3140.hostgator.com:2083/logout/?locale=en" target = "_blank"> Hostgator CPanel</a>
 </h2>
 
 <form method = "POST" action = "<?php echo $_SERVER["PHP_SELF"] ?>">
@@ -64,6 +70,7 @@ echo get_theme_file_uri('/LearnPHP.php') . '<br>'; //file uri
 
   <?php 
     $sql="Select * From reits Order By Category, Ticker";
+    //var_dump($conn);
     $results= mysqli_query($conn, $sql);
     $stockHouseLink = "https://stockhouse.com/companies/bullboard?symbol=";
     $tmxChartingLink = "https://web.tmxmoney.com/charting.php?qm_symbol=";

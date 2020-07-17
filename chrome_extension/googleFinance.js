@@ -2,7 +2,7 @@ console.log("Google!");
 
 $(document).ready(
   (function () {
-    var refreshInterval = randomIntFromInterval(15000, 25000); //15 seconds
+    var refreshInterval = randomIntFromInterval(45000, 75000); //45 seconds
     console.log(refreshInterval);
     var htmlSpan = document.getElementsByTagName("span")[0];
     console.log(htmlSpan);

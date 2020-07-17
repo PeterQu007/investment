@@ -2,9 +2,12 @@ console.log("tmx Legacy pages");
 //refresh the page every 10 seconds
 $(document).ready(
   (function () {
-    var refreshInterval = randomIntFromInterval(15000, 45000);
+    var refreshInterval = randomIntFromInterval(35000, 65000);
 
     let countTimer = setInterval(checkComplete, refreshInterval);
+    let countTimer2 = setInterval(updateRefreshInterval, 1000);
+    let iCounter = 1;
+
     var chkReload = $(`<input type="checkbox" id="chkReload">`);
     var spanReload = $(`<span>Reload</span>`);
     var siteUser = document.getElementsByClassName("site-user");
@@ -31,6 +34,7 @@ $(document).ready(
       console.log("chkReload Fetched!");
       chkReloadState = res.chkReloadState;
       chkReload.prop("checked", chkReloadState);
+      //If no need to refresh the page, reset/clear the 2 countertimers:
       if (!chkReloadState) {
         clearInterval(countTimer);
         countTimer = null;
@@ -48,6 +52,16 @@ $(document).ready(
       } else {
         clearInterval(countTimer);
         countTimer = null;
+      }
+    }
+
+    function updateRefreshInterval() {
+      chkReloadState = chkReload.is(":checked");
+      if (chkReloadState) {
+        spanReload.text(refreshInterval - 1000 * iCounter++);
+      } else {
+        spanReload.text(refreshInterval - 1000 * iCounter++);
+        spanReload.toggleClass("stopCounter");
       }
     }
 

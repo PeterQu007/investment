@@ -21,3 +21,7 @@ h1 {
 #refreshGoogleFinance {
   display: inline-block;
 }
+
+.stopCounter {
+  color: green;
+}
