@@ -683,11 +683,29 @@ VWVWM-WestmountWV|5418|subarea|SubArea
 class MarketStats {
   constructor() {
     this.statCode = "";
+    this.areaCode = "";
+    this.propertyGroup = "";
     this.htmlDiv = $("#infosparksTarget");
+    this.htmlDivQuickStats = $("div.quickStats");
     this.htmlFooter = $("footer");
-    var htmlButton = $(`<input type="button" id="pid_read_stat" value="Read">`);
+    // var htmlButtonAll = $(
+    //   `<input type="button" id="pid_read_stat_All" value="Read All">`
+    // );
+    // var htmlButtonDetached = $(
+    //   `<input type="button" id="pid_read_stat_Detached" value="Read Detached">`
+    // );
+    // var htmlButtonTownhouse = $(
+    //   `<input type="button" id="pid_read_stat_Townhouse" value="Read Townhouse">`
+    // );
+    // var htmlButtonCondo = $(
+    //   `<input type="button" id="pid_read_stat_Condo" value="Read Condo">`
+    // );
+
     this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
-    this.htmlDiv.append(htmlButton);
+    // this.htmlDivQuickStats.append(htmlButtonAll);
+    // this.htmlDivQuickStats.append(htmlButtonDetached);
+    // this.htmlDivQuickStats.append(htmlButtonTownhouse);
+    // this.htmlDivQuickStats.append(htmlButtonCondo);
     this.htmlFooter.remove();
     this.ms_events();
     this.selectedOptions = {
@@ -707,51 +725,96 @@ class MarketStats {
 
   // events
   ms_events() {
-    $("body").on("DOMSubtreeModified", "div.inputWrap", () => {
+    $("body").on("DOMSubtreeModified", "div.quickStats", () => {
+      if (!this.htmlDivQuickStats || this.htmlDivQuickStats.length == 0) {
+        this.htmlDivQuickStats = $(`div.quickStats`);
+      }
+      var htmlButtonAll = $(
+        `<input type="button" id="pid_read_stat_All" value="Read All">`
+      );
+      var htmlButtonDetached = $(
+        `<input type="button" id="pid_read_stat_Detached" value="Read Detached">`
+      );
+      var htmlButtonTownhouse = $(
+        `<input type="button" id="pid_read_stat_Townhouse" value="Read Townhouse">`
+      );
+      var htmlButtonCondo = $(
+        `<input type="button" id="pid_read_stat_Condo" value="Read Condo">`
+      );
+      if ($("#pid_read_stat_All").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonAll);
+
+        $("#pid_read_stat_All").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      if ($("#pid_read_stat_Detached").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonDetached);
+
+        $("#pid_read_stat_Detached").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=pt:2|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      if ($("#pid_read_stat_Townhouse").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonTownhouse);
+
+        $("#pid_read_stat_Townhouse").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=pt:8|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      if ($("#pid_read_stat_Condo").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonCondo);
+
+        $("#pid_read_stat_Condo").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=pt:4|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+
       console.log("area code changed");
-    });
-
-    // this.htmlButton.click(() => {
-    //   console.log("ms clicked");
-    //   if (!this.htmlAcInput) {
-    //     this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
-    //   }
-    //   var areaCode = this.htmlAcInput.value;
-    //   var areaCodeLastPosition = areaCode.indexOf("-");
-    //   if (areaCodeLastPosition > 0) {
-    //     areaCode = areaCode.substr(0, areaCodeLastPosition - 1).trim();
-    //   }
-    //   console.log(areaCode);
-    //   this.searchStatCode(areaCode);
-
-    //   this.selectedOptions.dq = this.statCode + "#0=|";
-
-    //   this.processDataRequest(
-    //     this.selectedOptions,
-    //     this.postData,
-    //     this.globalRequestParams
-    //   );
-    // });
-
-    $("#pid_read_stat").on("click", () => {
-      console.log("ms clicked");
-      if (!this.htmlAcInput) {
-        this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
-      }
-      var areaCode = this.htmlAcInput.value;
-      var areaCodeLastPosition = areaCode.indexOf("-");
-      if (areaCodeLastPosition > 0) {
-        areaCode = areaCode.substr(0, areaCodeLastPosition - 1).trim();
-      }
-      console.log(areaCode);
-      this.searchStatCode(areaCode);
     });
   }
   // methods
+  getAreaCode() {
+    if (!this.htmlAcInput) {
+      this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
+    }
+    var areaCode = this.htmlAcInput.value;
+    var cityName = "";
+    var areaCodeLastPosition = areaCode.indexOf("-");
+    if (areaCodeLastPosition > 0) {
+      cityName = areaCode
+        .substr(
+          areaCodeLastPosition + 1,
+          areaCode.length - areaCodeLastPosition
+        )
+        .trim();
+      areaCode = areaCode.substr(0, areaCodeLastPosition - 1).trim();
+    }
+    if (areaCode == "V") {
+      areaCode = "V" + cityName.substr(0, 2);
+      areaCode = areaCode.toUpperCase();
+    }
+    console.log(areaCode);
+    return areaCode;
+  }
+
   processDataRequest(selectedOptions, callback, globalRequestParams) {
     var requestData;
     var currentDataRequest;
     var backendDataUrl = "/infoserv/sparks";
+    var self = this;
 
     requestData = $.extend({ op: "d" }, selectedOptions, globalRequestParams);
 
@@ -795,8 +858,15 @@ class MarketStats {
       }
 
       // Call callback with payload (if defined)
+      var statData = {
+        saveData: true,
+        areaCode: self.areaCode,
+        propertyGroup: self.propertyGroup,
+        statData: data.Payload,
+      };
+
       if (callback) {
-        callback(data.Payload, currentDataRequest == null);
+        callback(statData, currentDataRequest == null);
       }
     };
 
@@ -823,13 +893,28 @@ class MarketStats {
     });
   }
 
-  searchStatCode(areaCode) {
+  searchStatCode(areaCode, groupCode = "") {
     var AreaCode = { areaCode: areaCode };
     chrome.runtime.sendMessage(AreaCode, (res) => {
       console.log(res);
       this.statCode = res.replace(/[\W_]+/g, "");
+      this.areaCode = areaCode;
+      switch (groupCode) {
+        case "#0=|":
+          this.propertyGroup = "All";
+          break;
+        case "#0=pt:2|":
+          this.propertyGroup = "Detached";
+          break;
+        case "#0=pt:8|":
+          this.propertyGroup = "Townhouse";
+          break;
+        case "#0=pt:4|":
+          this.propertyGroup = "Apartment";
+          break;
+      }
       if (this.statCode) {
-        this.selectedOptions.dq = this.statCode + "#0=|";
+        this.selectedOptions.dq = this.statCode + groupCode;
         this.processDataRequest(
           this.selectedOptions,
           this.saveData,
@@ -842,10 +927,10 @@ class MarketStats {
   saveData(statData) {
     if (!statData) {
       console.log("stat read error!");
+      return;
     } else {
       console.log(statData);
     }
-    statData = { saveData: true, statData: statData };
     chrome.runtime.sendMessage(statData, (res) => {
       console.log(res);
     });
