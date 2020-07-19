@@ -52,8 +52,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
   if (request.saveData) {
     $.ajax({
-      url:
-        "http://localhost/pidrealty3/wp-content/themes/realhomes-child/db/saveStatData.php",
+      url: request.saveURL,
       method: "post",
       data: request,
       success: function (res) {

@@ -1,3 +1,317 @@
+const SAVE_URL_LOCAL =
+  "http://localhost/pidrealty3/wp-content/themes/realhomes-child/db/saveStatData.php";
+const SAVE_URL_REMOTE =
+  "https://pidhomes.ca/wp-content/themes/realhomes-child-3/db/saveStatData.php";
+
+class MarketStats {
+  constructor() {
+    this.statCode = "";
+    this.areaCode = "";
+    this.propertyGroup = "";
+    this.htmlDiv = $("#infosparksTarget");
+    this.htmlDivQuickStats = $("div.quickStats");
+    this.htmlFooter = $("footer");
+    this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
+    this.htmlFooter.remove();
+    this.selectedOptions = {
+      calc: "monthly",
+      dq: "5035#0=|",
+      m: "hpi",
+      min: 1,
+      period: "3",
+      view: "100",
+    };
+    this.globalRequestParams = {
+      ac: "f7b8525e800647a5aab99bfa9c2bb2f7",
+      cid: "D6CFF8B05780494FB914B1A270A55F0F",
+      s: "b23a1bcecaa648dea9ce46946b16d062",
+    };
+    this.saveURL = "";
+    // set events
+    this.ms_events();
+  }
+
+  // events
+  ms_events() {
+    $("body").on("DOMSubtreeModified", "div.quickStats", () => {
+      if (!this.htmlDivQuickStats || this.htmlDivQuickStats.length == 0) {
+        this.htmlDivQuickStats = $(`div.quickStats`);
+      }
+      var htmlAreaLabel = $(`<h5 id="pid_areaLabel">Area Name</h5>`);
+      var htmlDivRadios = $(
+        `<div id="pid_save_radios" style="display: block"></div>`
+      );
+      var htmlSaveForm = $(
+        `<form name="pidSaveForm" style="display:block"></form`
+      );
+      var htmlSaveFieldSet = $(`<fieldset></fieldset>`);
+      var htmlRadioLocal = $(
+        `<input type="radio" id="pid_save_stat_local" class="SaveRadios" name="SaveRadios" value="save local" checked="checked">`
+      );
+      var htmlRadioLocalLabel = $(
+        `<label for="pid_save_stat_local">Save Local</label>`
+      );
+      var htmlRadioRemote = $(
+        `<input type="radio" id="pid_save_stat_remote" class="SaveRadios" name="SaveRadios" value="save remote">`
+      );
+      var htmlRadioRemoteLabel = $(
+        `<label for="pid_save_stat_remote">Save Remote</label>`
+      );
+      if ($("#pid_save_radios").length == 0) {
+        htmlSaveFieldSet.append(htmlRadioLocal);
+        htmlSaveFieldSet.append(htmlRadioLocalLabel);
+        htmlSaveFieldSet.append(htmlRadioRemote);
+        htmlSaveFieldSet.append(htmlRadioRemoteLabel);
+        htmlSaveForm.append(htmlSaveFieldSet);
+        htmlDivRadios.append(htmlAreaLabel);
+        htmlDivRadios.append(htmlSaveForm);
+        this.htmlDivQuickStats.append(htmlDivRadios);
+        this.saveURL = SAVE_URL_LOCAL;
+        var rad = document.getElementsByClassName("SaveRadios");
+        for (var i = 0; i < rad.length; i++) {
+          rad[i].addEventListener("change", (e) => {
+            switch (e.target.value.trim()) {
+              case "save local":
+                this.saveURL = SAVE_URL_LOCAL;
+                break;
+              case "save remote":
+                this.saveURL = SAVE_URL_REMOTE;
+                break;
+            }
+            console.log(this.saveURL);
+          });
+        }
+      }
+      var htmlButtonAll = $(
+        `<input type="button" id="pid_read_stat_All" value="Read All">`
+      );
+      var htmlButtonDetached = $(
+        `<input type="button" id="pid_read_stat_Detached" value="Read Detached">`
+      );
+      var htmlButtonTownhouse = $(
+        `<input type="button" id="pid_read_stat_Townhouse" value="Read Townhouse">`
+      );
+      var htmlButtonCondo = $(
+        `<input type="button" id="pid_read_stat_Condo" value="Read Condo">`
+      );
+      if ($("#pid_read_stat_All").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonAll);
+
+        $("#pid_read_stat_All").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      if ($("#pid_read_stat_Detached").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonDetached);
+
+        $("#pid_read_stat_Detached").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=pt:2|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      if ($("#pid_read_stat_Townhouse").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonTownhouse);
+
+        $("#pid_read_stat_Townhouse").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=pt:8|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      if ($("#pid_read_stat_Condo").length == 0) {
+        this.htmlDivQuickStats.append(htmlButtonCondo);
+
+        $("#pid_read_stat_Condo").on("click", () => {
+          console.log("ms clicked");
+          var areaCode = this.getAreaCode();
+          var groupCode = "#0=pt:4|";
+          this.searchStatCode(areaCode, groupCode);
+        });
+      }
+      // area code change
+      if ($(`div.inputWrap input.acInput`).length > 0) {
+        if (!this.htmlAcInput) {
+          this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
+          $(this.htmlAcInput).on(
+            "input change keydown keypress keyup mousedown click mouseup focusout",
+            (e) => {
+              console.log("area code changed: ", e.target.value);
+            }
+          );
+        } else {
+          if ($("#pid_areaLabel")) {
+            if ($("#pid_areaLabel").text() != this.htmlAcInput.value) {
+              $("#pid_areaLabel").text(this.htmlAcInput.value);
+              console.log(this.htmlAcInput.value);
+            }
+          }
+        }
+      }
+    });
+  }
+  // methods
+  getAreaCode() {
+    if (!this.htmlAcInput) {
+      this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
+    }
+    var areaCode = this.htmlAcInput.value;
+    var cityName = "";
+    var areaCodeLastPosition = areaCode.indexOf("-");
+    if (areaCodeLastPosition > 0) {
+      cityName = areaCode
+        .substr(
+          areaCodeLastPosition + 1,
+          areaCode.length - areaCodeLastPosition
+        )
+        .trim();
+      areaCode = areaCode.substr(0, areaCodeLastPosition - 1).trim();
+    }
+    if (areaCode == "V") {
+      areaCode = "V" + cityName.substr(0, 2);
+      areaCode = areaCode.toUpperCase();
+    }
+    console.log(areaCode);
+    return areaCode;
+  }
+
+  processDataRequest(selectedOptions, callback, globalRequestParams) {
+    var requestData;
+    var currentDataRequest;
+    var backendDataUrl = "/infoserv/sparks";
+    var self = this;
+
+    requestData = $.extend({ op: "d" }, selectedOptions, globalRequestParams);
+
+    // Function for sending request
+    var sendRequest = function (params) {
+      if (currentDataRequest) currentDataRequest.abort();
+
+      currentDataRequest = $.ajax({
+        type: "POST",
+        url: backendDataUrl,
+        dataType: "json",
+        data: params,
+        success: handleResult,
+      }).fail(function (jqXHR, textStatus, errorThrown) {
+        if (textStatus !== "abort") {
+          var response = jQuery.parseJSON(jqXHR.responseText);
+          callback(null, true, response);
+        }
+      });
+    };
+
+    // Function for handling result
+    var handleResult = function (data) {
+      if (data.ResponseType === "MULTIPART") {
+        var nextPart = data.TotalParts - data.RemainingParts;
+
+        if (data.RemainingParts !== 0) {
+          var newRequestData = $.extend(
+            {
+              nxt: nextPart,
+              rid: data.ResponseID,
+            },
+            requestData
+          );
+
+          // Send request for more data
+          sendRequest(newRequestData);
+        } else {
+          currentDataRequest = null;
+        }
+      }
+
+      // Call callback with payload (if defined)
+      var statData = {
+        saveData: true,
+        areaCode: self.areaCode,
+        propertyGroup: self.propertyGroup,
+        saveURL: self.saveURL,
+        statData: data.Payload,
+      };
+
+      if (callback) {
+        callback(statData, currentDataRequest == null);
+      }
+    };
+
+    // Initial send request
+    sendRequest(requestData);
+  }
+
+  showData(data) {
+    console.log(data);
+  }
+
+  postData(data) {
+    if (!data) {
+      console.log("stat read error!");
+    }
+    console.log(data);
+    var title = "test";
+    var id = "100";
+    // var ticker = { ticker: "HOT.UN" };
+    // var reits = {};
+    var marketData = { postTitle: title, postID: id };
+    chrome.runtime.sendMessage(marketData, (res) => {
+      console.log(res);
+    });
+  }
+
+  searchStatCode(areaCode, groupCode = "") {
+    var AreaCode = { areaCode: areaCode };
+    chrome.runtime.sendMessage(AreaCode, (res) => {
+      console.log(res);
+      this.statCode = res.replace(/[\W_]+/g, "");
+      this.areaCode = areaCode;
+      switch (groupCode) {
+        case "#0=|":
+          this.propertyGroup = "All";
+          break;
+        case "#0=pt:2|":
+          this.propertyGroup = "Detached";
+          break;
+        case "#0=pt:8|":
+          this.propertyGroup = "Townhouse";
+          break;
+        case "#0=pt:4|":
+          this.propertyGroup = "Apartment";
+          break;
+      }
+      if (this.statCode) {
+        this.selectedOptions.dq = this.statCode + groupCode;
+        this.processDataRequest(
+          this.selectedOptions,
+          this.saveData,
+          this.globalRequestParams
+        );
+      }
+    });
+  }
+
+  saveData(statData) {
+    if (!statData) {
+      console.log("stat read error!");
+      return;
+    } else {
+      console.log(statData);
+    }
+    chrome.runtime.sendMessage(statData, (res) => {
+      console.log(res);
+    });
+  }
+}
+
+$(document).ready(function () {
+  const ms = new MarketStats();
+});
+
 /**
  * 
 BCNREB|5008|board|Board
@@ -679,264 +993,3 @@ VWVWH-Westhill|5417|subarea|SubArea
 VWVWM-WestmountWV|5418|subarea|SubArea
 
  */
-
-class MarketStats {
-  constructor() {
-    this.statCode = "";
-    this.areaCode = "";
-    this.propertyGroup = "";
-    this.htmlDiv = $("#infosparksTarget");
-    this.htmlDivQuickStats = $("div.quickStats");
-    this.htmlFooter = $("footer");
-    // var htmlButtonAll = $(
-    //   `<input type="button" id="pid_read_stat_All" value="Read All">`
-    // );
-    // var htmlButtonDetached = $(
-    //   `<input type="button" id="pid_read_stat_Detached" value="Read Detached">`
-    // );
-    // var htmlButtonTownhouse = $(
-    //   `<input type="button" id="pid_read_stat_Townhouse" value="Read Townhouse">`
-    // );
-    // var htmlButtonCondo = $(
-    //   `<input type="button" id="pid_read_stat_Condo" value="Read Condo">`
-    // );
-
-    this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
-    // this.htmlDivQuickStats.append(htmlButtonAll);
-    // this.htmlDivQuickStats.append(htmlButtonDetached);
-    // this.htmlDivQuickStats.append(htmlButtonTownhouse);
-    // this.htmlDivQuickStats.append(htmlButtonCondo);
-    this.htmlFooter.remove();
-    this.ms_events();
-    this.selectedOptions = {
-      calc: "monthly",
-      dq: "5035#0=|",
-      m: "hpi",
-      min: 1,
-      period: "3",
-      view: "100",
-    };
-    this.globalRequestParams = {
-      ac: "f7b8525e800647a5aab99bfa9c2bb2f7",
-      cid: "D6CFF8B05780494FB914B1A270A55F0F",
-      s: "b23a1bcecaa648dea9ce46946b16d062",
-    };
-  }
-
-  // events
-  ms_events() {
-    $("body").on("DOMSubtreeModified", "div.quickStats", () => {
-      if (!this.htmlDivQuickStats || this.htmlDivQuickStats.length == 0) {
-        this.htmlDivQuickStats = $(`div.quickStats`);
-      }
-      var htmlButtonAll = $(
-        `<input type="button" id="pid_read_stat_All" value="Read All">`
-      );
-      var htmlButtonDetached = $(
-        `<input type="button" id="pid_read_stat_Detached" value="Read Detached">`
-      );
-      var htmlButtonTownhouse = $(
-        `<input type="button" id="pid_read_stat_Townhouse" value="Read Townhouse">`
-      );
-      var htmlButtonCondo = $(
-        `<input type="button" id="pid_read_stat_Condo" value="Read Condo">`
-      );
-      if ($("#pid_read_stat_All").length == 0) {
-        this.htmlDivQuickStats.append(htmlButtonAll);
-
-        $("#pid_read_stat_All").on("click", () => {
-          console.log("ms clicked");
-          var areaCode = this.getAreaCode();
-          var groupCode = "#0=|";
-          this.searchStatCode(areaCode, groupCode);
-        });
-      }
-      if ($("#pid_read_stat_Detached").length == 0) {
-        this.htmlDivQuickStats.append(htmlButtonDetached);
-
-        $("#pid_read_stat_Detached").on("click", () => {
-          console.log("ms clicked");
-          var areaCode = this.getAreaCode();
-          var groupCode = "#0=pt:2|";
-          this.searchStatCode(areaCode, groupCode);
-        });
-      }
-      if ($("#pid_read_stat_Townhouse").length == 0) {
-        this.htmlDivQuickStats.append(htmlButtonTownhouse);
-
-        $("#pid_read_stat_Townhouse").on("click", () => {
-          console.log("ms clicked");
-          var areaCode = this.getAreaCode();
-          var groupCode = "#0=pt:8|";
-          this.searchStatCode(areaCode, groupCode);
-        });
-      }
-      if ($("#pid_read_stat_Condo").length == 0) {
-        this.htmlDivQuickStats.append(htmlButtonCondo);
-
-        $("#pid_read_stat_Condo").on("click", () => {
-          console.log("ms clicked");
-          var areaCode = this.getAreaCode();
-          var groupCode = "#0=pt:4|";
-          this.searchStatCode(areaCode, groupCode);
-        });
-      }
-
-      console.log("area code changed");
-    });
-  }
-  // methods
-  getAreaCode() {
-    if (!this.htmlAcInput) {
-      this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
-    }
-    var areaCode = this.htmlAcInput.value;
-    var cityName = "";
-    var areaCodeLastPosition = areaCode.indexOf("-");
-    if (areaCodeLastPosition > 0) {
-      cityName = areaCode
-        .substr(
-          areaCodeLastPosition + 1,
-          areaCode.length - areaCodeLastPosition
-        )
-        .trim();
-      areaCode = areaCode.substr(0, areaCodeLastPosition - 1).trim();
-    }
-    if (areaCode == "V") {
-      areaCode = "V" + cityName.substr(0, 2);
-      areaCode = areaCode.toUpperCase();
-    }
-    console.log(areaCode);
-    return areaCode;
-  }
-
-  processDataRequest(selectedOptions, callback, globalRequestParams) {
-    var requestData;
-    var currentDataRequest;
-    var backendDataUrl = "/infoserv/sparks";
-    var self = this;
-
-    requestData = $.extend({ op: "d" }, selectedOptions, globalRequestParams);
-
-    // Function for sending request
-    var sendRequest = function (params) {
-      if (currentDataRequest) currentDataRequest.abort();
-
-      currentDataRequest = $.ajax({
-        type: "POST",
-        url: backendDataUrl,
-        dataType: "json",
-        data: params,
-        success: handleResult,
-      }).fail(function (jqXHR, textStatus, errorThrown) {
-        if (textStatus !== "abort") {
-          var response = jQuery.parseJSON(jqXHR.responseText);
-          callback(null, true, response);
-        }
-      });
-    };
-
-    // Function for handling result
-    var handleResult = function (data) {
-      if (data.ResponseType === "MULTIPART") {
-        var nextPart = data.TotalParts - data.RemainingParts;
-
-        if (data.RemainingParts !== 0) {
-          var newRequestData = $.extend(
-            {
-              nxt: nextPart,
-              rid: data.ResponseID,
-            },
-            requestData
-          );
-
-          // Send request for more data
-          sendRequest(newRequestData);
-        } else {
-          currentDataRequest = null;
-        }
-      }
-
-      // Call callback with payload (if defined)
-      var statData = {
-        saveData: true,
-        areaCode: self.areaCode,
-        propertyGroup: self.propertyGroup,
-        statData: data.Payload,
-      };
-
-      if (callback) {
-        callback(statData, currentDataRequest == null);
-      }
-    };
-
-    // Initial send request
-    sendRequest(requestData);
-  }
-
-  showData(data) {
-    console.log(data);
-  }
-
-  postData(data) {
-    if (!data) {
-      console.log("stat read error!");
-    }
-    console.log(data);
-    var title = "test";
-    var id = "100";
-    // var ticker = { ticker: "HOT.UN" };
-    // var reits = {};
-    var marketData = { postTitle: title, postID: id };
-    chrome.runtime.sendMessage(marketData, (res) => {
-      console.log(res);
-    });
-  }
-
-  searchStatCode(areaCode, groupCode = "") {
-    var AreaCode = { areaCode: areaCode };
-    chrome.runtime.sendMessage(AreaCode, (res) => {
-      console.log(res);
-      this.statCode = res.replace(/[\W_]+/g, "");
-      this.areaCode = areaCode;
-      switch (groupCode) {
-        case "#0=|":
-          this.propertyGroup = "All";
-          break;
-        case "#0=pt:2|":
-          this.propertyGroup = "Detached";
-          break;
-        case "#0=pt:8|":
-          this.propertyGroup = "Townhouse";
-          break;
-        case "#0=pt:4|":
-          this.propertyGroup = "Apartment";
-          break;
-      }
-      if (this.statCode) {
-        this.selectedOptions.dq = this.statCode + groupCode;
-        this.processDataRequest(
-          this.selectedOptions,
-          this.saveData,
-          this.globalRequestParams
-        );
-      }
-    });
-  }
-
-  saveData(statData) {
-    if (!statData) {
-      console.log("stat read error!");
-      return;
-    } else {
-      console.log(statData);
-    }
-    chrome.runtime.sendMessage(statData, (res) => {
-      console.log(res);
-    });
-  }
-}
-
-$(document).ready(function () {
-  const ms = new MarketStats();
-});
