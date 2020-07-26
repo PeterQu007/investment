@@ -99,8 +99,8 @@ class MarketStats {
 
         $("#pid_read_stat_All").on("click", () => {
           console.log("ms clicked");
-          var areaCode = this.getAreaCode();
-          var groupCode = "#0=|";
+          let areaCode = this.getAreaCode();
+          let groupCode = "#0=|";
           this.searchStatCode(areaCode, groupCode);
         });
       }
@@ -148,6 +148,7 @@ class MarketStats {
           if ($("#pid_areaLabel")) {
             if ($("#pid_areaLabel").text() != this.htmlAcInput.value) {
               $("#pid_areaLabel").text(this.htmlAcInput.value);
+              this.copyTextToClipboard(this.htmlAcInput.value);
               console.log(this.htmlAcInput.value);
             }
           }
@@ -305,6 +306,21 @@ class MarketStats {
     chrome.runtime.sendMessage(statData, (res) => {
       console.log(res);
     });
+  }
+
+  copyTextToClipboard(text) {
+    if (!navigator.clipboard) {
+      fallbackCopyTextToClipboard(text);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      function () {
+        console.log("Async: Copying to clipboard was successful!");
+      },
+      function (err) {
+        console.error("Async: Could not copy text: ", err);
+      }
+    );
   }
 }
 

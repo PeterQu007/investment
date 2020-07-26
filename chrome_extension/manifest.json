@@ -139,6 +139,14 @@
       "matches": ["https://statscentre.rebgv.org/stats/market*"],
       "js": ["jquery-3.4.1.min.js", "marketStats.js"],
       "css": ["style.css"]
+    },
+    {
+      "run_at": "document_idle",
+      "matches": [
+        "https://pidhomes.ca/wp-admin/edit-tags.php?taxonomy=property-city&post_type=market*"
+      ],
+      "js": ["jquery-3.4.1.min.js", "location.js"],
+      "css": ["style.css"]
     }
   ],
 
