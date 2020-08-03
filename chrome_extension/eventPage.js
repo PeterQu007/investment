@@ -39,16 +39,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     });
   }
   if (request.areaCode) {
-    $.ajax({
-      url:
-        "http://localhost/pidrealty3/wp-content/themes/realhomes-child/db/data.php",
-      method: "post",
-      data: request,
-      success: function (res) {
-        console.log(res);
-        sendResponse(res);
-      },
-    });
+    if (!request.saveData) {
+      $.ajax({
+        url:
+          "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php",
+        method: "post",
+        data: request,
+        success: function (res) {
+          console.log(res);
+          sendResponse(res);
+        },
+      });
+    }
   }
   if (request.saveData) {
     $.ajax({
