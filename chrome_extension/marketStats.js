@@ -8,6 +8,8 @@ class MarketStats {
     this.statCode = "";
     this.areaCode = "";
     this.propertyGroup = "";
+    this.deleteOldData = false;
+    this.error = "";
     this.htmlDiv = $("#infosparksTarget");
     this.htmlDivQuickStats = $("div.quickStats");
     this.htmlFooter = $("footer");
@@ -35,12 +37,17 @@ class MarketStats {
       s: "b23a1bcecaa648dea9ce46946b16d062",
     };
     this.saveURL = "";
-    // set events
-    this.ms_events();
+    // read monthly update status:
+    chrome.storage.local.get(["iAreaCodePointer"], (xInfo) => {
+      this.iAreaCodePointer = xInfo.iAreaCodePointer;
+      // set events
+      this.ms_events_options();
+      this.ms_events_loadStats();
+    });
   }
 
   // events
-  ms_events() {
+  ms_events_options() {
     $("body").on("DOMSubtreeModified", "div.quickStats", () => {
       if (!this.htmlDivQuickStats || this.htmlDivQuickStats.length == 0) {
         this.htmlDivQuickStats = $(`div.quickStats`);
@@ -52,33 +59,58 @@ class MarketStats {
       var htmlSaveForm = $(
         `<form name="pidSaveForm" style="display:block"></form`
       );
-      var htmlSaveFieldSet = $(`<fieldset></fieldset>`);
+      var htmlSaveFieldSet = $(
+        `<fieldset style="display: inline-block"></fieldset>`
+      );
       var htmlRadioLocal = $(
         `<input type="radio" id="pid_save_stat_local" class="SaveRadios" name="SaveRadios" value="save local" checked="checked">`
       );
       var htmlRadioLocalLabel = $(
-        `<label for="pid_save_stat_local">Save Local</label>`
+        `<label for="pid_save_stat_local" class="SaveRadios">Save Local</label>`
       );
       var htmlRadioRemote = $(
         `<input type="radio" id="pid_save_stat_remote" class="SaveRadios" name="SaveRadios" value="save remote">`
       );
       var htmlRadioRemoteLabel = $(
-        `<label for="pid_save_stat_remote">Save Remote</label>`
+        `<label for="pid_save_stat_remote" class="SaveRadios">Save Remote</label>`
       );
       var htmlCheckboxStop = $(
         `<input type="checkbox" id="pid_update_stat_stop" class="stopUpdateStats" name="StopUpdateStats" value="StopUpdateStats">`
       );
       var htmlCheckboxStopLabel = $(
-        `<label for="pid_update_stat_stop">Monthly Update</label>`
+        `<label for="pid_update_stat_stop" class="stopUpdateStats">Stop Monthly Update</label>`
+      );
+      // option: delete old data or not
+      let htmlCheckboxReloadData = $(
+        `<input type="checkbox" id="pid_reload_stats" class="stopUpdateStats" name="ReloadStats" value="ReloadStats">`
+      );
+      let htmlCheckboxReloadDataLabel = $(`<label for="pid_reload_stats" class="stopUpdateStats">Reload Stats</label>
+      `);
+      // option: monthly updates start over, set pointer to 0
+      let htmlResetAreaPointer = $(
+        `<input type="button" id="pid_reset_area_pointer" value="Reset Area Pointer">`
       );
 
       if ($("#pid_save_radios").length == 0) {
-        htmlSaveFieldSet.append(htmlRadioLocal);
-        htmlSaveFieldSet.append(htmlRadioLocalLabel);
-        htmlSaveFieldSet.append(htmlRadioRemote);
-        htmlSaveFieldSet.append(htmlRadioRemoteLabel);
-        htmlSaveFieldSet.append(htmlCheckboxStop);
-        htmlSaveFieldSet.append(htmlCheckboxStopLabel);
+        let htmlFormRow = $(`<div class = "formrow"></div>`);
+        htmlFormRow.append(htmlRadioLocal);
+        htmlFormRow.append(htmlRadioLocalLabel);
+        htmlSaveFieldSet.append(htmlFormRow);
+        let htmlFormRow2 = $(`<div class = "formrow"></div>`);
+        htmlFormRow2.append(htmlRadioRemote);
+        htmlFormRow2.append(htmlRadioRemoteLabel);
+        htmlSaveFieldSet.append(htmlFormRow2);
+        let htmlFormRow3 = $(`<div class = "formrow"></div>`);
+        htmlFormRow3.append(htmlCheckboxStop);
+        htmlFormRow3.append(htmlCheckboxStopLabel);
+        htmlSaveFieldSet.append(htmlFormRow3);
+        let htmlFormRow4 = $(`<div class = "formrow"></div>`);
+        htmlFormRow4.append(htmlCheckboxReloadData);
+        htmlFormRow4.append(htmlCheckboxReloadDataLabel);
+        htmlSaveFieldSet.append(htmlFormRow4);
+        let htmlFormRow5 = $(`<div class = "formrow"></div>`);
+        htmlFormRow5.append(htmlResetAreaPointer);
+        htmlSaveFieldSet.append(htmlFormRow5);
         htmlSaveForm.append(htmlSaveFieldSet);
         htmlDivRadios.append(htmlAreaLabel);
         htmlDivRadios.append(htmlSaveForm);
@@ -99,6 +131,35 @@ class MarketStats {
           });
         }
       }
+      // add reset area pointer event
+      $("#pid_reset_area_pointer").on("click", () => {
+        this.iAreaCodePointer = 0;
+        chrome.storage.local.set({ iAreaCodePointer: 0 }, () => {
+          // move area pointer to 0 /beginning of the list
+          // start over
+          let htmlButtonUpdate = $("#pid_update_stat");
+          htmlButtonUpdate.val(
+            `Monthly Update (${this.iAreaCodePointer} | ${areaCodes.length})`
+          );
+        });
+      });
+
+      $("#pid_reload_stats").click((e) => {
+        if ($(e.target).is(":checked")) {
+          this.deleteOldData = true;
+        } else {
+          this.deleteOldData = false;
+        }
+      });
+    });
+  }
+
+  ms_events_loadStats() {
+    $("body").on("DOMSubtreeModified", "div.quickStats", () => {
+      if (!this.htmlDivQuickStats || this.htmlDivQuickStats.length == 0) {
+        this.htmlDivQuickStats = $(`div.quickStats`);
+      }
+
       var htmlButtonAll = $(
         `<input type="button" id="pid_read_stat_All" value="Read All">`
       );
@@ -113,7 +174,7 @@ class MarketStats {
       );
 
       var htmlButtonUpdate = $(
-        `<input type="button" id="pid_update_stat" value="Monthly Update (${areaCodes.length})">`
+        `<input type="button" id="pid_update_stat" value="Monthly Update (${this.iAreaCodePointer} | ${areaCodes.length})">`
       );
 
       if ($("#pid_read_stat_All").length == 0) {
@@ -172,8 +233,10 @@ class MarketStats {
               : 0;
 
             let areaCode = areaCodes[i];
+            this.error = "";
             let loadTimer = setInterval(() => {
               let htmlCheckboxStop = $("input#pid_update_stat_stop");
+              console.log("loadTimer");
               if (!htmlCheckboxStop[0].checked) {
                 let groupCode = groupCodes.pop();
                 if (groupCode) {
@@ -181,7 +244,7 @@ class MarketStats {
                   this.searchStatCode_for_monthly_update(areaCode, groupCode);
                 } else {
                   //clear timer
-                  if (++i - iAreaCodePointer < 3) {
+                  if (++i - iAreaCodePointer < 1) {
                     areaCode = areaCodes[i];
                     groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"];
                     htmlCheckboxStop.prop("checked", false);
@@ -198,6 +261,20 @@ class MarketStats {
                     );
                     clearInterval(loadTimer);
                   }
+                }
+              } else {
+                let htmlCheckboxStop = $("input#pid_update_stat_stop");
+                // if errors happened, stop timer
+                if (this.error.indexOf("No Stats In the Array Data") == 0) {
+                  // NO HPI Data Found for this group
+                  // 1: StatsCenter Return 4 Data Collections, however current month HPI is null
+                  // 2: StatsCenter Return 4 Data Collections, however all HPI is ""
+                  // 3: StatsCenter Return 2 Data Collections, there is no Series Data included
+                  htmlCheckboxStop.prop("checked", false); //contintue next data request
+                } else if (this.error !== "") {
+                  clearInterval(loadTimer); //stop timer
+                  htmlCheckboxStop.prop("checked", true); //stop data process
+                  console.error(this.error); // report error
                 }
               }
             }, 1000);
@@ -228,6 +305,7 @@ class MarketStats {
   }
   // methods
   getAreaCode() {
+    // Read Area Code from the Selection Box on StatsCenter Web Page
     if (!this.htmlAcInput) {
       this.htmlAcInput = $(`div.inputWrap input.acInput`)[0];
     }
@@ -243,12 +321,26 @@ class MarketStats {
         .trim();
       areaCode = areaCode.substr(0, areaCodeLastPosition - 1).trim();
     }
+    // Correct some areaCode
+    // Burnaby & Vancouver City code VBU , VVA
     if (areaCode == "V") {
       areaCode = "V" + cityName.substr(0, 2);
       areaCode = areaCode.toUpperCase();
     }
+    // Abbotsford City Code F70 -> F70A ( F70 for Polar Langley)
     if (areaCode == "F70" && cityName == "Abbotsford") {
       areaCode = "F70A";
+    }
+    // Langley City Code F60 -> F60A ( F60 for MurrayVille Langley)
+    // 1: update wp_pid_cities
+    // 2: update wp_pid_stats_code
+    // 3: update wp_pid_neighborhoods
+    if (areaCode == "F60" && cityName == "Langley") {
+      areaCode = "F60A";
+    }
+    // Mission F80 -> F80A
+    if (areaCode == "F80" && cityName == "Mission") {
+      areaCode = "F80A";
     }
     console.log(areaCode);
     return areaCode;
@@ -308,6 +400,7 @@ class MarketStats {
         propertyGroup: self.propertyGroup,
         saveURL: self.saveURL,
         statData: data.Payload,
+        deleteOldData: self.deleteOldData,
       };
 
       if (callback) {
@@ -359,14 +452,14 @@ class MarketStats {
       saveData: false,
     };
     chrome.runtime.sendMessage(AreaCode, (res) => {
-      console.log(res);
+      console.log(res, ",", AreaCode.areaCode);
       this.statCode = res.replace(/[\W_]+/g, "");
-      this.areaCode = areaCode;
+      this.areaCode = AreaCode.areaCode;
       if (this.statCode) {
         this.selectedOptions.dq = this.statCode + groupCode;
         this.processDataRequest(
           this.selectedOptions,
-          this.saveData,
+          this.saveData.bind(this),
           this.globalRequestParams
         );
       }
@@ -403,10 +496,10 @@ class MarketStats {
       this.statCode = res.replace(/[\W_]+/g, "");
       this.areaCode = areaCode;
       if (this.statCode) {
-        this.selectedOptions.dq = this.statCode + groupCode;
+        this.selectedOptions_monthly_Update.dq = this.statCode + groupCode;
         this.processDataRequest(
           this.selectedOptions_monthly_Update,
-          this.saveData,
+          this.saveData.bind(this),
           this.globalRequestParams
         );
       }
@@ -414,21 +507,24 @@ class MarketStats {
   }
 
   saveData(statData) {
-    if (!statData) {
+    if (!statData.statData) {
       console.log("stat read error!");
       return;
     } else {
       console.log(statData);
     }
-    chrome.runtime.sendMessage(statData, (res) => {
+    let saveDataCallback = function (res) {
+      res = res.trim();
       console.log(res);
       let htmlCheckboxStop = document.getElementById("pid_update_stat_stop");
-      if (res.indexOf("error") >= 0) {
+      if (res.trim() != "Stats Inserted to DB!") {
         $(htmlCheckboxStop).prop("checked", true); // stop loading next neighborhood / property type
+        this.error = res;
       } else {
         $(htmlCheckboxStop).prop("checked", false); // Continue loading next neighborhood / property type
       }
-    });
+    };
+    chrome.runtime.sendMessage(statData, saveDataCallback.bind(this));
   }
 
   copyTextToClipboard(text) {
@@ -462,7 +558,8 @@ areaCodes = [
   "F50",
   "F60",
   "F70A",
-  "F80",
+  "F80A",
+  "F80A",
   "VBU",
   "VVA",
   "VBD",

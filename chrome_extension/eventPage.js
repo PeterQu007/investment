@@ -53,15 +53,17 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
   }
   if (request.saveData) {
-    $.ajax({
-      url: request.saveURL,
-      method: "post",
-      data: request,
-      success: function (res) {
-        console.log(res);
-        sendResponse(res);
-      },
-    });
+    if (request.saveData) {
+      $.ajax({
+        url: request.saveURL,
+        method: "post",
+        data: request,
+        success: function (res) {
+          console.log(res);
+          sendResponse(res);
+        },
+      });
+    }
   }
   return true;
 });

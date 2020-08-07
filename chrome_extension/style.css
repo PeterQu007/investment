@@ -25,3 +25,20 @@ h1 {
 .stopCounter {
   color: green;
 }
+
+.stopUpdateStats {
+  display: inline;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.SaveRadios {
+  display: inline;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.formrow {
+  display: block;
+  text-align: left;
+}
