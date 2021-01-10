@@ -251,6 +251,71 @@ class MarketStats {
       if ($("#pid_update_stat").length == 0) {
         this.htmlDivQuickStats.append(htmlButtonUpdate);
         // set event for 'Monthly Update(#|#)' Button
+        // $("#pid_update_stat").on("click", () => {
+        //   console.log("update button clicked");
+        //   let groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"];
+        //   let i = 0;
+        //   let iAreaCodePointer = 0;
+        //   chrome.storage.local.get(["iAreaCodePointer"], (xInfo) => {
+        //     // initial value for iAreaCodePointer = 0 if first time use it
+        //     i = xInfo.iAreaCodePointer ? xInfo.iAreaCodePointer : 0; // use to control the loop
+        //     iAreaCodePointer = i; // use as start area code pointer
+
+        //     let areaCode = areaCodes[i];
+        //     this.error = "";
+        //     let loadTimer = setInterval(() => {
+        //       let htmlCheckboxStop = $("input#pid_update_stat_stop");
+        //       console.log("AreaCodePointer/loadTimer:", i); //show current AreaCodePointer
+        //       if (!htmlCheckboxStop[0].checked) {
+        //         let groupCode = groupCodes.pop(); // Fetch a group Code
+        //         if (groupCode) {
+        //           htmlCheckboxStop.prop("checked", true); //disable load next
+        //           this.searchStatCode_for_monthly_update(areaCode, groupCode); // Main Function For Update Monthly Stats
+        //         } else {
+        //           //clear timer
+        //           this.areaQuantityEveryUpdate = parseInt(
+        //             $("#pid_area_quantity_every_update").val()
+        //           );
+        //           if (++i - iAreaCodePointer < this.areaQuantityEveryUpdate) {
+        //             areaCode = areaCodes[i];
+        //             groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"]; // reset groupCode for the new Area Code Update
+        //             htmlCheckboxStop.prop("checked", false);
+        //           } else {
+        //             // all area codes of this update command have been completed
+        //             if (i >= areaCodes.length) {
+        //               // if All Area Codes in the areaCodes List have been done
+        //               i = 0;
+        //             }
+        //             // set new iAreaCodePointer
+        //             chrome.storage.local.set({ iAreaCodePointer: i }, () => {
+        //               console.log(i, " save to chrome storage!");
+        //             });
+        //             let htmlButtonUpdate = $("#pid_update_stat");
+        //             htmlButtonUpdate.val(
+        //               "Monthly Update:(" + i + "|" + areaCodes.length + ")"
+        //             );
+        //             clearInterval(loadTimer);
+        //           }
+        //         }
+        //       } else {
+        //         let htmlCheckboxStop = $("input#pid_update_stat_stop");
+        //         // if errors happened, stop timer
+        //         if (this.error.indexOf("No Stats In the Array Data") == 0) {
+        //           // NO HPI Data Found for this group
+        //           // 1: StatsCenter Return 4 Data Collections, however current month HPI is null
+        //           // 2: StatsCenter Return 4 Data Collections, however all HPI is ""
+        //           // 3: StatsCenter Return 2 Data Collections, there is no Series Data included
+        //           htmlCheckboxStop.prop("checked", false); //contintue next data request
+        //         } else if (this.error !== "") {
+        //           clearInterval(loadTimer); //stop timer
+        //           htmlCheckboxStop.prop("checked", true); //stop data process
+        //           console.error(this.error); // report error
+        //         }
+        //       }
+        //     }, 1000);
+        //   });
+        // });
+
         $("#pid_update_stat").on("click", () => this.monthlyStatUpdate());
       }
       // area code change
@@ -318,7 +383,6 @@ class MarketStats {
           );
           let res3 = await this.saveData(statData);
           console.log(res3);
-          // update
         }
       }
     }
@@ -495,6 +559,118 @@ class MarketStats {
     });
   }
 
+  searchStatCode_for_monthly_update_backup(areaCode, groupCode = "") {
+    let date = new Date();
+    // Translate the StatsCentre group code to Property type
+    switch (groupCode) {
+      case "#0=|":
+        this.propertyGroup = "All";
+        break;
+      case "#0=pt:2|":
+        this.propertyGroup = "Detached";
+        break;
+      case "#0=pt:8|":
+        this.propertyGroup = "Townhouse";
+        break;
+      case "#0=pt:4|":
+        this.propertyGroup = "Apartment";
+        break;
+    }
+    var AreaCode = {
+      areaCode: areaCode,
+      propertyType: this.propertyGroup,
+      monthlyUpdate: true,
+      statMonth: date.getMonth(),
+      statYear: date.getFullYear(),
+      saveData: false,
+    };
+    // Fetch Stat_code by evenPage, from MySQL table: wp_pid_stats_code
+    chrome.runtime.sendMessage(AreaCode, (res) => {
+      console.log(res);
+      if (typeof res == "string") {
+        this.statCode = res.replace(/[\W_]+/g, ""); // remove non-word character[^a-zA-Z0-9_] and '_' from the result
+      } else {
+        this.statCode = res;
+      }
+      this.areaCode = areaCode;
+      if (this.statCode) {
+        this.selectedOptions_monthly_Update.dq = this.statCode + groupCode;
+        this.processDataRequest(
+          this.selectedOptions_monthly_Update,
+          this.saveData.bind(this),
+          this.globalRequestParams
+        );
+      }
+      // Change Code to Fetch
+    });
+  }
+
+  async searchStatCode_for_monthly_update(areaCode, groupCode = "") {
+    let date = new Date();
+    // Translate the StatsCentre group code to Property type
+    switch (groupCode) {
+      case "#0=|":
+        this.propertyGroup = "All";
+        break;
+      case "#0=pt:2|":
+        this.propertyGroup = "Detached";
+        break;
+      case "#0=pt:8|":
+        this.propertyGroup = "Townhouse";
+        break;
+      case "#0=pt:4|":
+        this.propertyGroup = "Apartment";
+        break;
+    }
+    var AreaCode = {
+      areaCode: areaCode,
+      propertyType: this.propertyGroup,
+      monthlyUpdate: true,
+      statMonth: date.getMonth(),
+      statYear: date.getFullYear(),
+      saveData: false,
+    };
+    // Fetch Stat_code by evenPage, from MySQL table: wp_pid_stats_code
+    // Change Code to Fetch
+    // chrome.runtime.sendMessage(AreaCode, (res) => doWork.call(this, res));
+
+    let textX = await sendMessagePromise.call(this, AreaCode);
+
+    function sendMessagePromise(AreaCode) {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(AreaCode, async (res) => {
+          if (res > 0) {
+            let doWorkResult = await doWork.call(this, res);
+            resolve(doWorkResult);
+          } else {
+            reject("error: AreaCode - StatCode Could not be find!");
+          }
+        });
+      });
+    }
+
+    async function doWork(res) {
+      console.log(res);
+      if (typeof res == "string") {
+        this.statCode = res.replace(/[\W_]+/g, ""); // remove non-word character[^a-zA-Z0-9_] and '_' from the result
+      } else {
+        this.statCode = res;
+      }
+
+      this.areaCode = areaCode;
+      if (this.statCode) {
+        this.selectedOptions_monthly_Update.dq = this.statCode + groupCode;
+        const statData = await this.processDataRequest_new(
+          this.selectedOptions_monthly_Update,
+          this.globalRequestParams
+        );
+        this.saveData(statData);
+      }
+    }
+
+    return Promise.resolve("done");
+  }
+
   async searchStatCodeForMonthlyUpdate(areaCode, groupCode = "") {
     let date = new Date();
     // Translate the StatsCentre group code to Property type
@@ -617,18 +793,39 @@ class MarketStats {
     } else {
       console.log(statData);
     }
-    let saveResult = await sendMessagePromise(statData);
-    return Promise.resolve(saveResult);
+    // let saveDataCallback = function (res) {
+    //   res = res.trim();
+    //   console.log(res);
+    //   let htmlCheckboxStop = document.getElementById("pid_update_stat_stop");
+    //   if (res.trim() != "Stats Inserted to DB!") {
+    //     $(htmlCheckboxStop).prop("checked", true); // stop loading next neighborhood / property type
+    //     this.error = res;
+    //   } else {
+    //     $(htmlCheckboxStop).prop("checked", false); // Continue loading next neighborhood / property type
+    //   }
+    // };
+    // chrome.runtime.sendMessage(statData, saveDataCallback.bind(this));
 
-    // Promise wrapper for chrome.runtime.sendMessage()
     function sendMessagePromise(statData) {
       return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(statData, (res) => {
           res = res.trim();
+          let htmlCheckboxStop = document.getElementById(
+            "pid_update_stat_stop"
+          );
+          if (res != "Stats Inserted to DB!") {
+            $(htmlCheckboxStop).prop("checked", true); // stop loading next neighborhood / property type
+            this.error = res;
+          } else {
+            $(htmlCheckboxStop).prop("checked", false); // Continue loading next neighborhood / property type
+          }
           resolve(res);
         });
       });
     }
+
+    let saveResult = await sendMessagePromise(statData);
+    return Promise.resolve(saveResult);
   }
 
   copyTextToClipboard(text) {

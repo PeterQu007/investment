@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Investment Manager",
+  "name": "Investment & Resource Manager",
   "version": "1.0",
-  "description": "Investment Manager for quick data checking",
+  "description": "Investment & Resource Manager for Quick Reference",
   "icons": {
     "128": "icon128.png",
     "48": "icon48.png",
@@ -20,8 +20,7 @@
     "persistent": false
   },
 
-  "content_scripts": [
-    {
+  "content_scripts": [{
       //TMX Login Page
       //Function: Automatically login with Username and Password
       "run_at": "document_end",
@@ -147,10 +146,53 @@
       ],
       "js": ["jquery-3.4.1.min.js", "location.js"],
       "css": ["style.css"]
+    },
+    {
+      "run_at": "document_idle",
+      "matches": [
+        "http://www.westca.com/Forums/viewforum/f=74/lang=schinese.html*"
+      ],
+      "js": [
+        "jquery-3.4.1.min.js",
+        "westca.js"
+      ],
+      "css": [
+        "style.css"
+      ]
+    },
+    {
+      "run_at": "document_idle",
+      "matches": [
+        "http://www.westca.com/Forums/viewtopic/t=1183840/lang=schinese.html*"
+      ],
+      "js": [
+        "jquery-3.4.1.min.js",
+        "westcaGoback.js"
+      ],
+      "css": [
+        "style.css"
+      ]
     }
+    // {
+    //   "run_at": "document_idle",
+    //   "all_frames": true,
+    //   "matches": [
+    //     "\u003Call_urls>"
+    //   ],
+    //   "js": [
+    //     "jquery-3.4.1.min.js",
+    //     "googleSearch.js"
+    //   ],
+    //   "css": [
+    //     "style.css"
+    //   ]
+    // }
   ],
 
+  "content_security_policy": "script-src 'self' https://ssl.google-analytics.com https://clients5.google.com https://apis.google.com https://cdnjs.cloudflare.com; object-src 'self'",
   "permissions": [
+    "tabs",
+    "activeTab",
     "storage",
     "notifications",
     "contextMenus",
@@ -158,6 +200,8 @@
     "https://investment.pidhome.ca/",
     "http://localhost/pidrealty3/",
     "http://localhost/pidrealty4/",
-    "https://pidhomes.ca/"
+    "https://pidhomes.ca/",
+    "http://www.westca.com/",
+    "all_urls"
   ]
 }

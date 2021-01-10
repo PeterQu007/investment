@@ -38,40 +38,88 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       },
     });
   }
-  if (request.areaCode) {
-    if (!request.saveData) {
-      $.ajax({
-        url:
-          "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php",
-        method: "post",
-        data: request,
-        success: function (res) {
-          console.log(res);
-          sendResponse(res);
-        },
-      });
-    }
+  if (request.areaCode && !request.saveData) {
+    // if (!request.saveData) {
+    //   $.ajax({
+    //     url: "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php",
+    //     method: "post",
+    //     data: request,
+    //     success: function (res) {
+    //       console.log(res);
+    //       sendResponse(res);
+    //     },
+    //   });
+    // }
+    getStatCode(request).then((res) => sendResponse(res));
   }
   if (request.saveData) {
     if (request.saveData) {
-      $.ajax({
-        url: request.saveURL,
-        method: "post",
-        data: request,
-        success: function (res) {
-          console.log(res);
-          sendResponse(res);
-        },
-      });
+      // $.ajax({
+      //   url: request.saveURL,
+      //   method: "post",
+      //   data: request,
+      //   success: function (res) {
+      //     console.log(res);
+      //     sendResponse(res);
+      //   },
+      // });
+
+      saveStatData(request).then((res) => sendResponse(res));
     }
   }
   return true;
 });
 
-var GoogleFinRefreshCounter = 0;
+async function getStatCode(postData) {
+  //areaCode -> statCode, example: VPMCP -> 5243
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(postData),
+  };
+  const url =
+    "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php";
+  const res = await fetch(url, options);
+  const statCode = await res.json();
+  return Promise.resolve(statCode);
+}
+
+async function saveStatData(postData) {
+  // place the stat data from StatsCentre to MySQL Database Table
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(postData),
+  };
+  const url = postData.saveURL;
+  let res = await fetch(url, options); // PHP should return json object, by json_decode()
+  res = await res.json();
+  return Promise.resolve(res);
+}
+
+chrome.browserAction.onClicked.addListener(function (activeTab) {
+  chrome.tabs.create(
+    {
+      url: chrome.runtime.getURL("newtab.html"),
+    },
+    function (tab) {
+      chrome.tabs.executeScript(tab.id, {
+        code: 'document.body.style.backgroundColor="green"',
+      });
+    }
+  );
+});
+
+var GoogleFinRefreshCounter = 1;
 //reset the Counter::
 chrome.storage.local.set(
-  { GoogleFinRefreshCounter: GoogleFinRefreshCounter },
+  {
+    GoogleFinRefreshCounter: GoogleFinRefreshCounter,
+  },
   () => {
     console.log(GoogleFinRefreshCounter);
   }
