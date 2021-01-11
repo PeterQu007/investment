@@ -10,6 +10,7 @@ class MarketStats {
     this.propertyGroup = "";
     this.deleteOldData = false;
     this.error = "";
+    this.areaQuantityEveryUpdate = 1;
     this.htmlDiv = $("#infosparksTarget");
     this.htmlDivQuickStats = $("div.quickStats");
     this.htmlFooter = $("footer");
@@ -91,7 +92,6 @@ class MarketStats {
         `<input type="button" id="pid_reset_area_pointer" value="Reset Area Pointer">`
       );
 
-      this.areaQuantityEveryUpdate = 1;
       let htmlAreaQuantityEveryUpdate = $(
         `<input type="text" id="pid_area_quantity_every_update" value=${this.areaQuantityEveryUpdate}>`
       );
@@ -162,7 +162,7 @@ class MarketStats {
             // start over
             let htmlButtonUpdate = $("#pid_update_stat");
             htmlButtonUpdate.val(
-              `Monthly Update (${this.iAreaCodePointer} | ${areaCodes.length})`
+              `Monthly Update (${this.iAreaCodePointer} | ${AreaCodes.length})`
             );
           }
         );
@@ -184,7 +184,7 @@ class MarketStats {
       });
     });
   }
-
+  // set up request stats buttons: Read All, Read Detached, Read Townhouse, Read Condo, Monthly Update
   ms_events_loadStats() {
     $("body").on("DOMSubtreeModified", "div.quickStats", () => {
       if (!this.htmlDivQuickStats || this.htmlDivQuickStats.length == 0) {
@@ -205,7 +205,7 @@ class MarketStats {
       );
 
       var htmlButtonUpdate = $(
-        `<input type="button" id="pid_update_stat" value="Monthly Update (${this.iAreaCodePointer} | ${areaCodes.length})">`
+        `<input type="button" id="pid_update_stat" value="Monthly Update (${this.iAreaCodePointer} | ${AreaCodes.length})">`
       );
 
       if ($("#pid_read_stat_All").length == 0) {
@@ -279,53 +279,89 @@ class MarketStats {
   // stat data monthly update
   monthlyStatUpdate() {
     console.log("update button clicked");
-    let groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"];
+    const groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"];
     let i = 0;
     let iAreaCodePointer = 0;
     let areaQuantityEveryUpdate = parseInt(
       $("#pid_area_quantity_every_update").val()
     );
 
-    async function handleChromeResponse(xInfo) {
-      i = xInfo.iAreaCodePointer ? xInfo.iAreaCodePointer : 0; // use to control the loop
-      iAreaCodePointer = i; // use as start area code pointer
+    // 1. get the current iAreaCodePointer from chrome.storage.local
+    // 2. start monthly stats update process
+    chrome.storage.local.get(["iAreaCodePointer"], (res) =>
+      startMonthlyUpdates.call(this, res)
+    );
 
-      let areaCode = areaCodes[i];
+    function sendMessagePromise(i) {
+      return new Promise((res, rej) => {
+        chrome.storage.local.set({ iAreaCodePointer: i }, (response) => {
+          res(response);
+        });
+      });
+    }
+
+    async function startMonthlyUpdates(xInfo) {
+      iAreaCodePointer = xInfo.iAreaCodePointer ? xInfo.iAreaCodePointer : 0; // use to control the loop
+
+      let areaCode = AreaCodes[i];
       this.error = "";
 
+      // loop all AreaCodes
       for (let j = 0; j < areaQuantityEveryUpdate; j++) {
-        areaCode = areaCodes[i + j]; // j is used to move areaCode pointer, i is the base areaCode Pointer
-        groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"]; // reset groupCode for the new Area Code Update
+        areaCode = AreaCodes[iAreaCodePointer + j]; // j is used to move areaCode pointer, i is the base areaCode Pointer
 
+        //loop all groups
         for (let index = 0; index < groupCodes.length; index++) {
           let groupCode = groupCodes[index];
-          let res = await this.searchStatCodeForMonthlyUpdate(
-            areaCode,
-            groupCode
-          );
-
-          if (typeof res == "string") {
-            this.statCode = res.replace(/[\W_]+/g, ""); // remove non-word character[^a-zA-Z0-9_] and '_' from the result
-          } else {
-            this.statCode = res;
+          let statData;
+          // get statCode from MySQL Database table
+          try {
+            this.statCode = await this.searchStatCodeForMonthlyUpdate(
+              areaCode,
+              groupCode
+            );
+          } catch (err) {
+            this.error = err;
+            console.log(areaCode, groupCode, err);
+            continue;
           }
 
           this.areaCode = areaCode;
           this.selectedOptions_monthly_Update.dq = this.statCode + groupCode;
-          const statData = await this.processDataRequest_new(
-            this.selectedOptions_monthly_Update,
-            this.globalRequestParams
+          try {
+            statData = await this.processDataRequest_new(
+              this.selectedOptions_monthly_Update,
+              this.globalRequestParams
+            );
+          } catch (err) {
+            this.error = err;
+            console.error(areaCode, groupCode, err);
+            continue;
+          }
+
+          try {
+            let saveDataResult = await this.saveData(statData);
+            console.log(saveDataResult);
+          } catch (err) {
+            this.error = err;
+            console.error(areaCode, groupCode, err);
+            continue;
+          }
+        }
+        if (this.error.indexOf("fatal") === -1) {
+          // if there is no fatal errors, set next iAreaCodePointer to chrome local storage
+          let saveAreaPointerResult = await sendMessagePromise(
+            iAreaCodePointer + 1 + j
           );
-          let res3 = await this.saveData(statData);
-          console.log(res3);
-          // update
+          // update the button message
+          this.iAreaCodePointer++;
+          let htmlButtonUpdate = $("#pid_update_stat");
+          htmlButtonUpdate.val(
+            `Monthly Update (${this.iAreaCodePointer} | ${AreaCodes.length})`
+          );
         }
       }
     }
-
-    chrome.storage.local.get(["iAreaCodePointer"], (res) =>
-      handleChromeResponse.call(this, res)
-    );
   }
   // methods
   getAreaCode() {
@@ -497,6 +533,7 @@ class MarketStats {
 
   async searchStatCodeForMonthlyUpdate(areaCode, groupCode = "") {
     let date = new Date();
+    let statCode;
     // Translate the StatsCentre group code to Property type
     switch (groupCode) {
       case "#0=|":
@@ -523,6 +560,20 @@ class MarketStats {
 
     let searchRes = await sendMessagePromise.call(this, AreaCode);
 
+    if (typeof searchRes === "string" && searchRes.indexOf("error") > -1) {
+      // catch errors
+      return Promise.reject(searchRes);
+    }
+    // normalize the statCode
+    if (typeof searchRes === "string") {
+      statCode = searchRes.replace(/[\W_]+/g, ""); // remove all non-word character[^a-zA-Z0-9_] and '_' from the result
+    } else {
+      statCode = searchRes;
+    }
+    // return promise value
+    return Promise.resolve(statCode);
+
+    // Promise Functions Wrapper for chrome.runtime.sendMessage
     function sendMessagePromise(AreaCode) {
       return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(AreaCode, async (res) => {
@@ -534,88 +585,118 @@ class MarketStats {
         });
       });
     }
-
-    return Promise.resolve(searchRes);
   }
 
-  processDataRequest_new(selectedOptions, globalRequestParams) {
+  async processDataRequest_new(selectedOptions, globalRequestParams) {
+    const backendDataUrl = "/infoserv/sparks";
     var requestData;
     var currentDataRequest;
-    var backendDataUrl = "/infoserv/sparks";
     var self = this;
     var statData;
 
     requestData = $.extend({ op: "d" }, selectedOptions, globalRequestParams);
-
-    // Function for sending request to statsCentre API
-    var sendRequest = function (postData) {
-      if (currentDataRequest) currentDataRequest.abort();
-
-      currentDataRequest = $.ajax({
-        type: "POST",
-        url: backendDataUrl,
-        dataType: "json",
-        data: postData,
-        async: false, //inhibit async ajax call
-        success: handleResult,
-        error: handleError,
-      });
-
-      return statData;
-    };
-
-    // Function for handling error
-    var handleError = function (jqXHR, textStatus, errorThrown) {
-      if (textStatus !== "abort") {
-        var response = jQuery.parseJSON(jqXHR.responseText);
-        callback(null, true, response); // to do list: no callback any more
-      }
-    };
-
-    // Function for handling result of multiparts
-    var handleResult = function (data, textStatus, jqXHR) {
-      if (data.ResponseType === "MULTIPART") {
-        var nextPart = data.TotalParts - data.RemainingParts;
-
-        if (data.RemainingParts !== 0) {
-          var newRequestData = $.extend(
-            {
-              nxt: nextPart,
-              rid: data.ResponseID,
-            },
-            requestData
-          );
-
-          // Send request for more data
-          sendRequest(newRequestData);
-        } else {
-          // close the data request connection
-          currentDataRequest = null;
+    // Initial send request
+    let statInfo;
+    let statInfoTemp = [];
+    let requestTries = 2; // two tries: 0 , 1
+    try {
+      // set 3 tries, if stats data is not correct try once more
+      for (let i = 0; i < requestTries; i++) {
+        statInfo = await sendRequest(requestData);
+        if (
+          statInfo !== "stats data error from the Server, Please try again!"
+        ) {
+          break;
         }
       }
+    } catch (err) {
+      console.error("processDataRequest Failed:", err);
+    }
 
-      // Call callback with payload (if defined)
-      statData = {
-        saveData: true,
-        areaCode: self.areaCode,
-        propertyGroup: self.propertyGroup,
-        saveURL: self.saveURL,
-        statData: data.Payload,
-        deleteOldData: self.deleteOldData,
-      };
-    };
-
-    // Initial send request
-    const statInfo = sendRequest(requestData);
     return Promise.resolve(statInfo);
+
+    // Function for sending request to statsCentre API
+    function sendRequest(postData) {
+      if (currentDataRequest) currentDataRequest.abort();
+
+      return new Promise((res, rej) => {
+        currentDataRequest = $.ajax({
+          type: "POST",
+          url: backendDataUrl,
+          dataType: "json",
+          data: postData,
+          async: true, //inhibit async ajax call
+          success: ajaxResolve,
+          error: ajaxReject,
+        });
+
+        // Function for handling result of multiparts
+        async function ajaxResolve(data, textStatus, jqXHR) {
+          if (data.ResponseType === "MULTIPART") {
+            var nextPart = data.TotalParts - data.RemainingParts;
+
+            if (data.RemainingParts !== 0) {
+              var newRequestData = $.extend(
+                {
+                  nxt: nextPart,
+                  rid: data.ResponseID,
+                },
+                requestData
+              );
+
+              // Send request for more data
+              statInfoTemp = statInfoTemp.concat(data.Payload);
+              await sendRequest(newRequestData);
+              return;
+            } else {
+              // close the data request connection
+              currentDataRequest = null;
+              statInfoTemp = data.Payload;
+            }
+          }
+
+          // precess the data payload
+          // contains 4 arrays - normal state
+          // contains 2 arrays - if no summary data, normal state
+          // contains 2 arrays - but only summary data, error occurs
+          let returnDataLength = statInfoTemp.length;
+          statData = {
+            saveData: true,
+            areaCode: self.areaCode,
+            propertyGroup: self.propertyGroup,
+            saveURL: self.saveURL,
+            statData: statInfoTemp, // wrap stat data
+            deleteOldData: self.deleteOldData,
+          };
+          console.log(statData);
+
+          if (
+            (returnDataLength === 2 &&
+              statInfoTemp[1].Type === "SERIES_DATA") ||
+            returnDataLength === 4
+          ) {
+            res(statData); // resolved promise
+          } else {
+            // server does not return correct stats data
+            res("stats data error from the Server, Please try again!");
+          }
+        }
+
+        // Function for handling error
+        function ajaxReject(jqXHR, textStatus, errorThrown) {
+          if (textStatus !== "abort") {
+            var response = jQuery.parseJSON(jqXHR.responseText);
+            rej("fatal error::" + response); // to do list: no callback any more
+          }
+        }
+      });
+    }
   }
 
   async saveData(statData) {
     if (!statData.statData) {
       console.log("stat read error!");
       return;
-    } else {
-      console.log(statData);
     }
     let saveResult = await sendMessagePromise(statData);
     return Promise.resolve(saveResult);
@@ -651,7 +732,7 @@ $(document).ready(function () {
   const ms = new MarketStats();
 });
 
-areaCodes = [
+const AreaCodes = [
   "FVREB",
   "REBGV",
   "F10",
