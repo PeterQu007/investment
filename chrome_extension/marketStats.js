@@ -2,6 +2,13 @@ const SAVE_URL_LOCAL =
   "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/saveStatData.php";
 const SAVE_URL_REMOTE =
   "https://pidhomes.ca/wp-content/themes/realhomes-child-3/db/saveStatData.php";
+// ERROR MESSAGES
+const ERROR_MESSAGE_NO_DATA = "warning: no stats data, try again!";
+const ERROR_MESSAGE_DATA_FATAL = "fatal error: data server fatal error";
+const ERROR_MESSAGE_DATA_FAILED = "dataRequest error: data request failed";
+const ERROR_MESSAGE_NO_ERROR = "";
+const ERROR_MESSAGE_DATA_OK = "data request succeed";
+const ERROR_MESSAGE_NO_STAT_DATA = "NO_STATS_DATA";
 
 class MarketStats {
   constructor() {
@@ -9,7 +16,7 @@ class MarketStats {
     this.areaCode = "";
     this.propertyGroup = "";
     this.deleteOldData = false;
-    this.error = "";
+    this.error = new Error(ERROR_MESSAGE_NO_ERROR);
     this.areaQuantityEveryUpdate = 1;
     this.htmlDiv = $("#infosparksTarget");
     this.htmlDivQuickStats = $("div.quickStats");
@@ -39,12 +46,18 @@ class MarketStats {
     };
     this.saveURL = "";
     // read monthly update status:
-    chrome.storage.local.get(["iAreaCodePointer"], (xInfo) => {
-      this.iAreaCodePointer = xInfo.iAreaCodePointer;
-      // set events
-      this.ms_events_options();
-      this.ms_events_loadStats();
-    });
+    chrome.storage.local.get(
+      ["iAreaCodePointer", "areaQuantityEveryUpdate"],
+      (xInfo) => {
+        this.iAreaCodePointer = xInfo.iAreaCodePointer;
+        this.areaQuantityEveryUpdate = xInfo.areaQuantityEveryUpdate
+          ? xInfo.areaQuantityEveryUpdate
+          : this.areaQuantityEveryUpdate;
+        // set events
+        this.ms_events_options();
+        this.ms_events_loadStats();
+      }
+    );
   }
 
   // events
@@ -180,6 +193,14 @@ class MarketStats {
         var keycode = e.keyCode ? e.keyCode : e.which;
         if (keycode == "13") {
           this.areaQuantityEveryUpdate = parseInt($(e.target).val());
+          chrome.storage.local.set(
+            { areaQuantityEveryUpdate: this.areaQuantityEveryUpdate },
+            () => {
+              console.log(
+                "New this.areaQuantityEveryUpdate Save to Local Storage"
+              );
+            }
+          );
         }
       });
     });
@@ -260,7 +281,7 @@ class MarketStats {
           $(this.htmlAcInput).on(
             "input change keydown keypress keyup mousedown click mouseup focusout",
             (e) => {
-              console.log("area code changed: ", e.target.value);
+              // console.log("area code changed: ", e.target.value);
             }
           );
         } else {
@@ -304,7 +325,7 @@ class MarketStats {
       iAreaCodePointer = xInfo.iAreaCodePointer ? xInfo.iAreaCodePointer : 0; // use to control the loop
 
       let areaCode = AreaCodes[i];
-      this.error = "";
+      this.error = new Error(ERROR_MESSAGE_NO_ERROR);
 
       // loop all AreaCodes
       for (let j = 0; j < areaQuantityEveryUpdate; j++) {
@@ -314,7 +335,7 @@ class MarketStats {
         for (let index = 0; index < groupCodes.length; index++) {
           let groupCode = groupCodes[index];
           let statData;
-          // get statCode from MySQL Database table
+          // 1. get statCode from MySQL Database table
           try {
             this.statCode = await this.searchStatCodeForMonthlyUpdate(
               areaCode,
@@ -328,6 +349,7 @@ class MarketStats {
 
           this.areaCode = areaCode;
           this.selectedOptions_monthly_Update.dq = this.statCode + groupCode;
+          // 2. get the statData from stats Centre API
           try {
             statData = await this.processDataRequest_new(
               this.selectedOptions_monthly_Update,
@@ -335,20 +357,27 @@ class MarketStats {
             );
           } catch (err) {
             this.error = err;
-            console.error(areaCode, groupCode, err);
+            console.log(areaCode, groupCode, err.message);
             continue;
           }
 
+          // 3. save the statData to MySql Database
           try {
             let saveDataResult = await this.saveData(statData);
             console.log(saveDataResult);
           } catch (err) {
             this.error = err;
-            console.error(areaCode, groupCode, err);
+            console.log(areaCode, groupCode, err);
             continue;
           }
         }
-        if (this.error.indexOf("fatal") === -1) {
+
+        // Loop: go for next areaCode
+        console.log("Loop Counter: ", j);
+        if (
+          this.error.message === ERROR_MESSAGE_NO_ERROR ||
+          this.error.message.indexOf("fatal") === -1
+        ) {
           // if there is no fatal errors, set next iAreaCodePointer to chrome local storage
           let saveAreaPointerResult = await sendMessagePromise(
             iAreaCodePointer + 1 + j
@@ -361,6 +390,7 @@ class MarketStats {
           );
         }
       }
+      console.log("Stats Data Request Task All Done!");
     }
   }
   // methods
@@ -602,19 +632,36 @@ class MarketStats {
     try {
       // set 3 tries, if stats data is not correct try once more
       for (let i = 0; i < requestTries; i++) {
+        statInfoTemp = [];
         statInfo = await sendRequest(requestData);
-        if (
-          statInfo !== "stats data error from the Server, Please try again!"
-        ) {
-          break;
+        if (statInfo instanceof Error) {
+          if (i === requestTries - 1) {
+            statInfo.message = ERROR_MESSAGE_DATA_FAILED;
+            console.log(`Last DataRequest Try:`, statInfo.message);
+          } else {
+            console.log(`[${i + 1}] DataRequest Try:`, statInfo.message);
+          }
+        } else {
+          console.log(ERROR_MESSAGE_DATA_OK);
+          break; // if no error, jump out the Loop
         }
       }
     } catch (err) {
-      console.error("processDataRequest Failed:", err);
+      // fatal errors:
+      console.log("ProcessDataRequest Fatal Error:", err.message);
+      statInfo = new Error(ERROR_MESSAGE_DATA_FATAL);
     }
 
-    return Promise.resolve(statInfo);
+    return new Promise((resolve, reject) => {
+      if (statInfo instanceof Error) {
+        this.error = new Error(ERROR_MESSAGE_DATA_FAILED);
+        reject(statInfo);
+      } else {
+        resolve(statInfo);
+      }
+    });
 
+    //#region Support Functions
     // Function for sending request to statsCentre API
     function sendRequest(postData) {
       if (currentDataRequest) currentDataRequest.abort();
@@ -646,15 +693,34 @@ class MarketStats {
 
               // Send request for more data
               statInfoTemp = statInfoTemp.concat(data.Payload);
-              await sendRequest(newRequestData);
-              return;
+              let moreDataPart = await sendRequestForMoreData(newRequestData);
+              console.log(moreDataPart);
+              statInfoTemp = statInfoTemp.concat(moreDataPart.Payload);
             } else {
               // close the data request connection
               currentDataRequest = null;
-              statInfoTemp = data.Payload;
+              // concat last data part
+              statInfoTemp = statInfoTemp.concat(data.Payload);
             }
           }
 
+          // check if statInfoTemp contains data: status "OK" or "NO_DATA"?
+          // status is inside Type: "SERIES_DATA"
+          // 4 Types are: "SERIES_DATA","SERIES_CATEGORIES","DATA_PARTS","QUICKSTATS"
+          // Loop to get Type SERIES_DATA
+          let SERIES_DATA = statInfoTemp.filter(
+            (statInfo) => statInfo.Type === "SERIES_DATA"
+          );
+          // data status should be "OK" for a normal request
+          let status =
+            SERIES_DATA.length > 0
+              ? SERIES_DATA[0].Status
+              : ERROR_MESSAGE_NO_STAT_DATA;
+          let areaName =
+            SERIES_DATA.length > 0
+              ? SERIES_DATA[0].Name
+              : ERROR_MESSAGE_NO_STAT_DATA;
+          let seriesData = SERIES_DATA.length > 0 ? SERIES_DATA[0].Data : [];
           // precess the data payload
           // contains 4 arrays - normal state
           // contains 2 arrays - if no summary data, normal state
@@ -668,29 +734,76 @@ class MarketStats {
             statData: statInfoTemp, // wrap stat data
             deleteOldData: self.deleteOldData,
           };
-          console.log(statData);
+          console.log(
+            statData.areaCode,
+            areaName,
+            statData.propertyGroup,
+            status,
+            seriesData
+          );
 
           if (
-            (returnDataLength === 2 &&
+            ((returnDataLength === 2 &&
               statInfoTemp[1].Type === "SERIES_DATA") ||
-            returnDataLength === 4
+              returnDataLength === 4) &&
+            status === "OK"
           ) {
+            console.log("resolve stat data");
             res(statData); // resolved promise
           } else {
             // server does not return correct stats data
-            res("stats data error from the Server, Please try again!");
+            // do not send reject error info, try again
+            statInfoTemp = []; // rest statInfoTemp container
+            let err = new Error(ERROR_MESSAGE_NO_DATA);
+            console.warn("No Data Returned");
+            res(err);
           }
         }
 
-        // Function for handling error
+        // Function for handling fatal error
         function ajaxReject(jqXHR, textStatus, errorThrown) {
           if (textStatus !== "abort") {
             var response = jQuery.parseJSON(jqXHR.responseText);
-            rej("fatal error::" + response); // to do list: no callback any more
+            let errMsg = ERROR_MESSAGE_DATA_FATAL;
+            let err = new Error(errMsg);
+            rej(err); // to do list: no callback any more
           }
         }
       });
     }
+
+    function sendRequestForMoreData(postData) {
+      if (currentDataRequest) currentDataRequest.abort();
+
+      return new Promise((res, rej) => {
+        currentDataRequest = $.ajax({
+          type: "POST",
+          url: backendDataUrl,
+          dataType: "json",
+          data: postData,
+          async: true, //inhibit async ajax call
+          success: ajaxResolve,
+          error: ajaxReject,
+        });
+
+        // Function for handling result of multiparts
+        async function ajaxResolve(data, textStatus, jqXHR) {
+          res(data);
+        }
+
+        // Function for handling fatal error
+        function ajaxReject(jqXHR, textStatus, errorThrown) {
+          if (textStatus !== "abort") {
+            var response = jQuery.parseJSON(jqXHR.responseText);
+            let errMsg = ERROR_MESSAGE_DATA_FATAL;
+            let err = new Error(errMsg);
+            rej(err); // to do list: no callback any more
+          }
+        }
+      });
+    }
+
+    //#endregion
   }
 
   async saveData(statData) {
@@ -722,7 +835,7 @@ class MarketStats {
         console.log("Async: Copying to clipboard was successful!");
       },
       function (err) {
-        console.error("Async: Could not copy text: ", err);
+        console.log("Async: Could not copy text: ", err);
       }
     );
   }
