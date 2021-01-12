@@ -9,6 +9,8 @@ const ERROR_MESSAGE_DATA_FAILED = "dataRequest error: data request failed";
 const ERROR_MESSAGE_NO_ERROR = "";
 const ERROR_MESSAGE_DATA_OK = "data request succeed";
 const ERROR_MESSAGE_NO_STAT_DATA = "NO_STATS_DATA";
+const REQUEST_TRIES = 1;
+const MORE_DATA_REMAINING = "more data remaining";
 
 class MarketStats {
   constructor() {
@@ -330,7 +332,12 @@ class MarketStats {
       // loop all AreaCodes
       for (let j = 0; j < areaQuantityEveryUpdate; j++) {
         areaCode = AreaCodes[iAreaCodePointer + j]; // j is used to move areaCode pointer, i is the base areaCode Pointer
-
+        // Loop: go for next areaCode
+        console.warn(
+          `AreaCode ${areaCode} Loop Counter:${
+            j + 1
+          } of ${areaQuantityEveryUpdate}`
+        );
         //loop all groups
         for (let index = 0; index < groupCodes.length; index++) {
           let groupCode = groupCodes[index];
@@ -343,7 +350,7 @@ class MarketStats {
             );
           } catch (err) {
             this.error = err;
-            console.log(areaCode, groupCode, err);
+            console.error(areaCode, groupCode, err);
             continue;
           }
 
@@ -357,7 +364,7 @@ class MarketStats {
             );
           } catch (err) {
             this.error = err;
-            console.log(areaCode, groupCode, err.message);
+            console.error(areaCode, groupCode, err.message);
             continue;
           }
 
@@ -367,13 +374,11 @@ class MarketStats {
             console.log(saveDataResult);
           } catch (err) {
             this.error = err;
-            console.log(areaCode, groupCode, err);
+            console.error(areaCode, groupCode, err);
             continue;
           }
         }
 
-        // Loop: go for next areaCode
-        console.log("Loop Counter: ", j);
         if (
           this.error.message === ERROR_MESSAGE_NO_ERROR ||
           this.error.message.indexOf("fatal") === -1
@@ -628,12 +633,16 @@ class MarketStats {
     // Initial send request
     let statInfo;
     let statInfoTemp = [];
-    let requestTries = 2; // two tries: 0 , 1
+    let moreDataParts = [];
+    let remainingDataParts = 0;
+    let requestTries = REQUEST_TRIES; // two tries: 0 , 1
     try {
       // set 3 tries, if stats data is not correct try once more
       for (let i = 0; i < requestTries; i++) {
         statInfoTemp = [];
-        statInfo = await sendRequest(requestData);
+        //statInfo = await sendRequest(requestData);
+        statInfo = await requestStatData(requestData);
+        statInfo = await processStatData(statInfo.Payload);
         if (statInfo instanceof Error) {
           if (i === requestTries - 1) {
             statInfo.message = ERROR_MESSAGE_DATA_FAILED;
@@ -693,7 +702,9 @@ class MarketStats {
 
               // Send request for more data
               statInfoTemp = statInfoTemp.concat(data.Payload);
-              let moreDataPart = await sendRequestForMoreData(newRequestData);
+              //reset moreDataParts
+              moreDataParts = [];
+              let moreDataPart = await requestStatData(newRequestData);
               console.log(moreDataPart);
               statInfoTemp = statInfoTemp.concat(moreDataPart.Payload);
             } else {
@@ -772,7 +783,7 @@ class MarketStats {
       });
     }
 
-    function sendRequestForMoreData(postData) {
+    function requestStatData(postData) {
       if (currentDataRequest) currentDataRequest.abort();
 
       return new Promise((res, rej) => {
@@ -788,6 +799,43 @@ class MarketStats {
 
         // Function for handling result of multiparts
         async function ajaxResolve(data, textStatus, jqXHR) {
+          if (data.ResponseType === "MULTIPART") {
+            var nextPart = data.TotalParts - data.RemainingParts;
+
+            if (data.RemainingParts !== 0) {
+              // Store the latest remainingDataParts
+              remainingDataParts = data.RemainingParts;
+              var newRequestData = $.extend(
+                {
+                  nxt: nextPart,
+                  rid: data.ResponseID,
+                },
+                requestData
+              );
+
+              // Send request for more data
+              moreDataParts = moreDataParts.concat(data.Payload);
+              let moreDataPart = await requestStatData(newRequestData);
+              moreDataParts = moreDataParts.concat(moreDataPart.Payload);
+              // Check remainingParts
+              if (remainingDataParts === 0) {
+                data.Payload = moreDataParts;
+                res(data);
+              } else {
+                console.warn(
+                  `${MORE_DATA_REMAINING}, remaining data parts will be ${data.RemainingParts}`
+                );
+              }
+            } else {
+              // close the data request connection
+              currentDataRequest = null;
+              remainingDataParts = 0; // in order to end the recursive loop
+              // // concat last data part
+              // moreDataParts = moreDataParts.concat(data.Payload);
+              // // replace the data.Payload
+              // data.Payload = moreDataParts;
+            }
+          }
           res(data);
         }
 
@@ -799,6 +847,64 @@ class MarketStats {
             let err = new Error(errMsg);
             rej(err); // to do list: no callback any more
           }
+        }
+      });
+    }
+
+    function processStatData(statDataInfo) {
+      // check if statInfoTemp contains data: status "OK" or "NO_DATA"?
+      // status is inside Type: "SERIES_DATA"
+      // 4 Types are: "SERIES_DATA","SERIES_CATEGORIES","DATA_PARTS","QUICKSTATS"
+      // Loop to get Type SERIES_DATA
+      return new Promise((res, rej) => {
+        let SERIES_DATA = statDataInfo.filter(
+          (statItem) => statItem.Type === "SERIES_DATA"
+        );
+        // data status should be "OK" for a normal request
+        let status =
+          SERIES_DATA.length > 0
+            ? SERIES_DATA[0].Status
+            : ERROR_MESSAGE_NO_STAT_DATA;
+        let areaName =
+          SERIES_DATA.length > 0
+            ? SERIES_DATA[0].Name
+            : ERROR_MESSAGE_NO_STAT_DATA;
+        let seriesData = SERIES_DATA.length > 0 ? SERIES_DATA[0].Data : [];
+        // precess the data payload
+        // contains 4 arrays - normal state
+        // contains 2 arrays - if no summary data, normal state
+        // contains 2 arrays - but only summary data, error occurs
+        let returnDataLength = statDataInfo.length;
+        statData = {
+          saveData: true,
+          areaCode: self.areaCode,
+          propertyGroup: self.propertyGroup,
+          saveURL: self.saveURL,
+          statData: statDataInfo, // wrap stat data
+          deleteOldData: self.deleteOldData,
+        };
+        console.log(
+          statData.areaCode,
+          areaName,
+          statData.propertyGroup,
+          status,
+          seriesData
+        );
+
+        if (
+          ((returnDataLength === 2 && statDataInfo[1].Type === "SERIES_DATA") ||
+            returnDataLength === 4) &&
+          status === "OK"
+        ) {
+          console.log("resolve stat data");
+          res(statData); // resolved promise
+        } else {
+          // server does not return correct stats data
+          // do not send reject error info, try again
+          statDataInfo = []; // rest statInfoTemp container
+          let err = new Error(ERROR_MESSAGE_NO_DATA);
+          console.warn("No Data Returned");
+          res(err);
         }
       });
     }
