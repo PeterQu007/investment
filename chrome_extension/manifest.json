@@ -136,7 +136,7 @@
     {
       "run_at": "document_idle",
       "matches": ["https://statscentre.rebgv.org/stats/market*"],
-      "js": ["jquery-3.4.1.min.js", "marketStats.js"],
+      "js": ["jquery-3.4.1.min.js", "marketStats.js", "./modules/marketStatsPromise.js", "./modules/marketStatsConstants.js"],
       "css": ["style.css"]
     },
     {

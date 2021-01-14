@@ -67,6 +67,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       saveStatData(request).then((res) => sendResponse(res));
     }
   }
+  if (request.action && request.action === "updateStatCode") {
+    updateStatCode(request).then((res) => sendResponse(res));
+  }
   return true;
 });
 
@@ -86,6 +89,22 @@ async function getStatCode(postData) {
   return Promise.resolve(statCode);
 }
 
+async function updateStatCode(postData) {
+  //areaCode, groupCode -> statCode Availability, example: All -> 0
+  const options = {
+    method: "POST",
+    header: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(postData),
+  };
+  const url =
+    "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/updateStatCode.php";
+  const res = await fetch(url, options);
+  const updateResult = await res.json();
+  return Promise.resolve(updateResult);
+}
+
 async function saveStatData(postData) {
   // place the stat data from StatsCentre to MySQL Database Table
   const options = {
@@ -97,8 +116,11 @@ async function saveStatData(postData) {
   };
   const url = postData.saveURL;
   let res = await fetch(url, options); // PHP should return json object, by json_decode()
-  res = await res.json();
-  return Promise.resolve(res);
+  const saveDataResult = await res.json();
+  console.log(
+    `${postData.areaCode}:${postData.propertyGroup}:${saveDataResult}`
+  );
+  return Promise.resolve(saveDataResult);
 }
 
 chrome.browserAction.onClicked.addListener(function (activeTab) {

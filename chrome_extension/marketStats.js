@@ -1,20 +1,6 @@
-const SAVE_URL_LOCAL =
-  "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/saveStatData.php";
-const SAVE_URL_REMOTE =
-  "https://pidhomes.ca/wp-content/themes/realhomes-child-3/db/saveStatData.php";
-// ERROR MESSAGES
-const ERROR_MESSAGE_NO_DATA = "warning: no stats data, try again!";
-const ERROR_MESSAGE_DATA_FATAL = "fatal error: data server fatal error";
-const ERROR_MESSAGE_DATA_FAILED = "dataRequest error: data request failed";
-const ERROR_MESSAGE_NO_ERROR = "";
-const ERROR_MESSAGE_DATA_OK = "data request succeed";
-const ERROR_MESSAGE_NO_STAT_DATA = "NO_STATS_DATA";
-const REQUEST_TRIES = 1;
-const MORE_DATA_REMAINING = "more data remaining";
-
 class MarketStats {
   constructor() {
-    this.statCode = ""; // an area code provide by statsCentre, data is stored in MYSQL table: wp_pid_stats_code
+    this.statCodeInfo = ""; // an area code provide by statsCentre, data is stored in MYSQL table: wp_pid_stats_code
     this.areaCode = "";
     this.propertyGroup = "";
     this.deleteOldData = false;
@@ -303,6 +289,7 @@ class MarketStats {
   monthlyStatUpdate() {
     console.log("update button clicked");
     const groupCodes = ["#0=|", "#0=pt:2|", "#0=pt:8|", "#0=pt:4|"];
+    const propertyTypes = ["All", "Detached", "Townhouse", "Apartment"];
     let i = 0;
     let iAreaCodePointer = 0;
     let areaQuantityEveryUpdate = parseInt(
@@ -314,14 +301,6 @@ class MarketStats {
     chrome.storage.local.get(["iAreaCodePointer"], (res) =>
       startMonthlyUpdates.call(this, res)
     );
-
-    function sendMessagePromise(i) {
-      return new Promise((res, rej) => {
-        chrome.storage.local.set({ iAreaCodePointer: i }, (response) => {
-          res(response);
-        });
-      });
-    }
 
     async function startMonthlyUpdates(xInfo) {
       iAreaCodePointer = xInfo.iAreaCodePointer ? xInfo.iAreaCodePointer : 0; // use to control the loop
@@ -341,10 +320,11 @@ class MarketStats {
         //loop all groups
         for (let index = 0; index < groupCodes.length; index++) {
           let groupCode = groupCodes[index];
+          let propertyType = propertyTypes[groupCodes.indexOf(groupCode)];
           let statData;
           // 1. get statCode from MySQL Database table
           try {
-            this.statCode = await this.searchStatCodeForMonthlyUpdate(
+            this.statCodeInfo = await this.searchStatCodeForMonthlyUpdate(
               areaCode,
               groupCode
             );
@@ -354,17 +334,31 @@ class MarketStats {
             continue;
           }
 
+          await this.updateStatCode(areaCode, propertyType, true);
+
+          // if statCodeInfo.groupCode is true, go to update stat data
+          // otherwise, bypass this groupCode and go to next groupCode
+          if (!this.statCodeInfo[propertyType]) {
+            continue;
+          }
+
           this.areaCode = areaCode;
-          this.selectedOptions_monthly_Update.dq = this.statCode + groupCode;
+          this.selectedOptions_monthly_Update.dq =
+            this.statCodeInfo.stat_code + groupCode;
           // 2. get the statData from stats Centre API
           try {
-            statData = await this.processDataRequest_new(
+            statData = await this.requestStatData(
               this.selectedOptions_monthly_Update,
               this.globalRequestParams
             );
           } catch (err) {
             this.error = err;
             console.error(areaCode, groupCode, err.message);
+            // if err.message === NO_DATA
+            // update backend MySQL Table wp_pid_stat_code groupCode to 0
+            if (this.statCodeInfo[propertyType] && err.message === "") {
+              this.updateStatCode(areaCode, propertyType, false);
+            }
             continue;
           }
 
@@ -381,10 +375,10 @@ class MarketStats {
 
         if (
           this.error.message === ERROR_MESSAGE_NO_ERROR ||
-          this.error.message.indexOf("fatal") === -1
+          this.error.message.indexOf("Fatal") === -1
         ) {
           // if there is no fatal errors, set next iAreaCodePointer to chrome local storage
-          let saveAreaPointerResult = await sendMessagePromise(
+          let saveAreaPointerResult = await saveAreaCodePointerPromise(
             iAreaCodePointer + 1 + j
           );
           // update the button message
@@ -593,56 +587,59 @@ class MarketStats {
       saveData: false,
     };
 
-    let searchRes = await sendMessagePromise.call(this, AreaCode);
+    let statCodeInfo = await searchStatCodePromise.call(this, AreaCode);
 
-    if (typeof searchRes === "string" && searchRes.indexOf("error") > -1) {
+    if (
+      typeof statCodeInfo === "string" &&
+      statCodeInfo.indexOf("error") > -1
+    ) {
       // catch errors
-      return Promise.reject(searchRes);
+      return Promise.reject(statCodeInfo);
     }
     // normalize the statCode
-    if (typeof searchRes === "string") {
-      statCode = searchRes.replace(/[\W_]+/g, ""); // remove all non-word character[^a-zA-Z0-9_] and '_' from the result
+    statCode = statCodeInfo.stat_code;
+    if (typeof statCode === "string") {
+      statCode = statCode.replace(/[\W_]+/g, ""); // remove all non-word character[^a-zA-Z0-9_] and '_' from the result
     } else {
-      statCode = searchRes;
+      statCode = statCode;
     }
     // return promise value
-    return Promise.resolve(statCode);
+    return Promise.resolve(statCodeInfo);
 
     // Promise Functions Wrapper for chrome.runtime.sendMessage
-    function sendMessagePromise(AreaCode) {
-      return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(AreaCode, async (res) => {
-          if (res > 0) {
-            resolve(res);
-          } else {
-            reject("error: AreaCode - StatCode Could not be find!");
-          }
-        });
-      });
-    }
+    // function sendMessagePromise(AreaCode) {
+    //   return new Promise((resolve, reject) => {
+    //     chrome.runtime.sendMessage(AreaCode, async (res) => {
+    //       if (res > 0) {
+    //         resolve(res);
+    //       } else {
+    //         reject("error: AreaCode - StatCode Could not be find!");
+    //       }
+    //     });
+    //   });
+    // }
   }
 
-  async processDataRequest_new(selectedOptions, globalRequestParams) {
-    const backendDataUrl = "/infoserv/sparks";
+  async requestStatData(selectedOptions, globalRequestParams) {
     var requestData;
     var currentDataRequest;
-    var self = this;
-    var statData;
 
     requestData = $.extend({ op: "d" }, selectedOptions, globalRequestParams);
     // Initial send request
     let statInfo;
     let statInfoTemp = [];
-    let moreDataParts = [];
-    let remainingDataParts = 0;
     let requestTries = REQUEST_TRIES; // two tries: 0 , 1
     try {
       // set 3 tries, if stats data is not correct try once more
       for (let i = 0; i < requestTries; i++) {
         statInfoTemp = [];
         //statInfo = await sendRequest(requestData);
-        statInfo = await requestStatData(requestData);
-        statInfo = await processStatData(statInfo.Payload);
+        statInfo = await ajaxStatDataPromise.call(
+          this,
+          requestData,
+          currentDataRequest
+        );
+        statInfo = await processStatData.call(this, statInfo.Payload);
         if (statInfo instanceof Error) {
           if (i === requestTries - 1) {
             statInfo.message = ERROR_MESSAGE_DATA_FAILED;
@@ -669,247 +666,6 @@ class MarketStats {
         resolve(statInfo);
       }
     });
-
-    //#region Support Functions
-    // Function for sending request to statsCentre API
-    function sendRequest(postData) {
-      if (currentDataRequest) currentDataRequest.abort();
-
-      return new Promise((res, rej) => {
-        currentDataRequest = $.ajax({
-          type: "POST",
-          url: backendDataUrl,
-          dataType: "json",
-          data: postData,
-          async: true, //inhibit async ajax call
-          success: ajaxResolve,
-          error: ajaxReject,
-        });
-
-        // Function for handling result of multiparts
-        async function ajaxResolve(data, textStatus, jqXHR) {
-          if (data.ResponseType === "MULTIPART") {
-            var nextPart = data.TotalParts - data.RemainingParts;
-
-            if (data.RemainingParts !== 0) {
-              var newRequestData = $.extend(
-                {
-                  nxt: nextPart,
-                  rid: data.ResponseID,
-                },
-                requestData
-              );
-
-              // Send request for more data
-              statInfoTemp = statInfoTemp.concat(data.Payload);
-              //reset moreDataParts
-              moreDataParts = [];
-              let moreDataPart = await requestStatData(newRequestData);
-              console.log(moreDataPart);
-              statInfoTemp = statInfoTemp.concat(moreDataPart.Payload);
-            } else {
-              // close the data request connection
-              currentDataRequest = null;
-              // concat last data part
-              statInfoTemp = statInfoTemp.concat(data.Payload);
-            }
-          }
-
-          // check if statInfoTemp contains data: status "OK" or "NO_DATA"?
-          // status is inside Type: "SERIES_DATA"
-          // 4 Types are: "SERIES_DATA","SERIES_CATEGORIES","DATA_PARTS","QUICKSTATS"
-          // Loop to get Type SERIES_DATA
-          let SERIES_DATA = statInfoTemp.filter(
-            (statInfo) => statInfo.Type === "SERIES_DATA"
-          );
-          // data status should be "OK" for a normal request
-          let status =
-            SERIES_DATA.length > 0
-              ? SERIES_DATA[0].Status
-              : ERROR_MESSAGE_NO_STAT_DATA;
-          let areaName =
-            SERIES_DATA.length > 0
-              ? SERIES_DATA[0].Name
-              : ERROR_MESSAGE_NO_STAT_DATA;
-          let seriesData = SERIES_DATA.length > 0 ? SERIES_DATA[0].Data : [];
-          // precess the data payload
-          // contains 4 arrays - normal state
-          // contains 2 arrays - if no summary data, normal state
-          // contains 2 arrays - but only summary data, error occurs
-          let returnDataLength = statInfoTemp.length;
-          statData = {
-            saveData: true,
-            areaCode: self.areaCode,
-            propertyGroup: self.propertyGroup,
-            saveURL: self.saveURL,
-            statData: statInfoTemp, // wrap stat data
-            deleteOldData: self.deleteOldData,
-          };
-          console.log(
-            statData.areaCode,
-            areaName,
-            statData.propertyGroup,
-            status,
-            seriesData
-          );
-
-          if (
-            ((returnDataLength === 2 &&
-              statInfoTemp[1].Type === "SERIES_DATA") ||
-              returnDataLength === 4) &&
-            status === "OK"
-          ) {
-            console.log("resolve stat data");
-            res(statData); // resolved promise
-          } else {
-            // server does not return correct stats data
-            // do not send reject error info, try again
-            statInfoTemp = []; // rest statInfoTemp container
-            let err = new Error(ERROR_MESSAGE_NO_DATA);
-            console.warn("No Data Returned");
-            res(err);
-          }
-        }
-
-        // Function for handling fatal error
-        function ajaxReject(jqXHR, textStatus, errorThrown) {
-          if (textStatus !== "abort") {
-            var response = jQuery.parseJSON(jqXHR.responseText);
-            let errMsg = ERROR_MESSAGE_DATA_FATAL;
-            let err = new Error(errMsg);
-            rej(err); // to do list: no callback any more
-          }
-        }
-      });
-    }
-
-    function requestStatData(postData) {
-      if (currentDataRequest) currentDataRequest.abort();
-
-      return new Promise((res, rej) => {
-        currentDataRequest = $.ajax({
-          type: "POST",
-          url: backendDataUrl,
-          dataType: "json",
-          data: postData,
-          async: true, //inhibit async ajax call
-          success: ajaxResolve,
-          error: ajaxReject,
-        });
-
-        // Function for handling result of multiparts
-        async function ajaxResolve(data, textStatus, jqXHR) {
-          if (data.ResponseType === "MULTIPART") {
-            var nextPart = data.TotalParts - data.RemainingParts;
-
-            if (data.RemainingParts !== 0) {
-              // Store the latest remainingDataParts
-              remainingDataParts = data.RemainingParts;
-              var newRequestData = $.extend(
-                {
-                  nxt: nextPart,
-                  rid: data.ResponseID,
-                },
-                requestData
-              );
-
-              // Send request for more data
-              moreDataParts = moreDataParts.concat(data.Payload);
-              let moreDataPart = await requestStatData(newRequestData);
-              moreDataParts = moreDataParts.concat(moreDataPart.Payload);
-              // Check remainingParts
-              if (remainingDataParts === 0) {
-                data.Payload = moreDataParts;
-                res(data);
-              } else {
-                console.warn(
-                  `${MORE_DATA_REMAINING}, remaining data parts will be ${data.RemainingParts}`
-                );
-              }
-            } else {
-              // close the data request connection
-              currentDataRequest = null;
-              remainingDataParts = 0; // in order to end the recursive loop
-              // // concat last data part
-              // moreDataParts = moreDataParts.concat(data.Payload);
-              // // replace the data.Payload
-              // data.Payload = moreDataParts;
-            }
-          }
-          res(data);
-        }
-
-        // Function for handling fatal error
-        function ajaxReject(jqXHR, textStatus, errorThrown) {
-          if (textStatus !== "abort") {
-            var response = jQuery.parseJSON(jqXHR.responseText);
-            let errMsg = ERROR_MESSAGE_DATA_FATAL;
-            let err = new Error(errMsg);
-            rej(err); // to do list: no callback any more
-          }
-        }
-      });
-    }
-
-    function processStatData(statDataInfo) {
-      // check if statInfoTemp contains data: status "OK" or "NO_DATA"?
-      // status is inside Type: "SERIES_DATA"
-      // 4 Types are: "SERIES_DATA","SERIES_CATEGORIES","DATA_PARTS","QUICKSTATS"
-      // Loop to get Type SERIES_DATA
-      return new Promise((res, rej) => {
-        let SERIES_DATA = statDataInfo.filter(
-          (statItem) => statItem.Type === "SERIES_DATA"
-        );
-        // data status should be "OK" for a normal request
-        let status =
-          SERIES_DATA.length > 0
-            ? SERIES_DATA[0].Status
-            : ERROR_MESSAGE_NO_STAT_DATA;
-        let areaName =
-          SERIES_DATA.length > 0
-            ? SERIES_DATA[0].Name
-            : ERROR_MESSAGE_NO_STAT_DATA;
-        let seriesData = SERIES_DATA.length > 0 ? SERIES_DATA[0].Data : [];
-        // precess the data payload
-        // contains 4 arrays - normal state
-        // contains 2 arrays - if no summary data, normal state
-        // contains 2 arrays - but only summary data, error occurs
-        let returnDataLength = statDataInfo.length;
-        statData = {
-          saveData: true,
-          areaCode: self.areaCode,
-          propertyGroup: self.propertyGroup,
-          saveURL: self.saveURL,
-          statData: statDataInfo, // wrap stat data
-          deleteOldData: self.deleteOldData,
-        };
-        console.log(
-          statData.areaCode,
-          areaName,
-          statData.propertyGroup,
-          status,
-          seriesData
-        );
-
-        if (
-          ((returnDataLength === 2 && statDataInfo[1].Type === "SERIES_DATA") ||
-            returnDataLength === 4) &&
-          status === "OK"
-        ) {
-          console.log("resolve stat data");
-          res(statData); // resolved promise
-        } else {
-          // server does not return correct stats data
-          // do not send reject error info, try again
-          statDataInfo = []; // rest statInfoTemp container
-          let err = new Error(ERROR_MESSAGE_NO_DATA);
-          console.warn("No Data Returned");
-          res(err);
-        }
-      });
-    }
-
-    //#endregion
   }
 
   async saveData(statData) {
@@ -917,14 +673,35 @@ class MarketStats {
       console.log("stat read error!");
       return;
     }
-    let saveResult = await sendMessagePromise(statData);
-    return Promise.resolve(saveResult);
+    let saveStatDataResult = await sendMessagePromise(statData);
+    return Promise.resolve(saveStatDataResult);
 
     // Promise wrapper for chrome.runtime.sendMessage()
     function sendMessagePromise(statData) {
       return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(statData, (res) => {
           res = res.trim();
+          resolve(res);
+        });
+      });
+    }
+  }
+
+  async updateStatCode(areaCode, propertyType, hasStatData) {
+    let statCodeInfo = {
+      areaCode: areaCode,
+      propertyType: propertyType,
+      hasStatData: hasStatData,
+      action: "updateStatCode",
+    };
+    let updateStatDataResult = await sendMessagePromise(statCodeInfo);
+    return Promise.resolve(updateStatDataResult);
+
+    // Promise wrapper for chrome.runtime.sendMessage()
+    function sendMessagePromise(statCodeInfo) {
+      return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(statCodeInfo, (res) => {
+          res.stat_code = res.stat_code.trim();
           resolve(res);
         });
       });
