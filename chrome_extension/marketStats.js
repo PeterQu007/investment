@@ -2,7 +2,7 @@ class MarketStats {
   constructor() {
     this.statCodeInfo = ""; // an area code provide by statsCentre, data is stored in MYSQL table: wp_pid_stats_code
     this.areaCode = "";
-    this.propertyGroup = "";
+    this.propertyType = "";
     this.deleteOldData = false;
     this.error = new Error(ERROR_MESSAGE_NO_ERROR);
     this.areaQuantityEveryUpdate = 1;
@@ -312,10 +312,8 @@ class MarketStats {
       for (let j = 0; j < areaQuantityEveryUpdate; j++) {
         areaCode = AreaCodes[iAreaCodePointer + j]; // j is used to move areaCode pointer, i is the base areaCode Pointer
         // Loop: go for next areaCode
-        console.warn(
-          `AreaCode ${areaCode} Loop Counter:${
-            j + 1
-          } of ${areaQuantityEveryUpdate}`
+        console.group(
+          `AreaCode ${areaCode} Loop:#${j + 1} of ${areaQuantityEveryUpdate}`
         );
         //loop all groups
         for (let index = 0; index < groupCodes.length; index++) {
@@ -328,25 +326,25 @@ class MarketStats {
               areaCode,
               groupCode
             );
+            // if statCodeInfo.groupCode is true, go to update stat data
+            // otherwise, bypass this groupCode and go to next groupCode
+            if (this.statCodeInfo[propertyType] === "0") {
+              console.warn(
+                `${areaCode} ${propertyType} BYPASS STAT DATA Request`
+              );
+              continue;
+            }
           } catch (err) {
             this.error = err;
             console.error(areaCode, groupCode, err);
             continue;
           }
 
-          await this.updateStatCode(areaCode, propertyType, true);
-
-          // if statCodeInfo.groupCode is true, go to update stat data
-          // otherwise, bypass this groupCode and go to next groupCode
-          if (!this.statCodeInfo[propertyType]) {
-            continue;
-          }
-
-          this.areaCode = areaCode;
-          this.selectedOptions_monthly_Update.dq =
-            this.statCodeInfo.stat_code + groupCode;
           // 2. get the statData from stats Centre API
           try {
+            this.areaCode = areaCode;
+            this.selectedOptions_monthly_Update.dq =
+              this.statCodeInfo.stat_code + groupCode;
             statData = await this.requestStatData(
               this.selectedOptions_monthly_Update,
               this.globalRequestParams
@@ -356,7 +354,10 @@ class MarketStats {
             console.error(areaCode, groupCode, err.message);
             // if err.message === NO_DATA
             // update backend MySQL Table wp_pid_stat_code groupCode to 0
-            if (this.statCodeInfo[propertyType] && err.message === "") {
+            if (
+              this.statCodeInfo[propertyType] &&
+              err.message === ERROR_MESSAGE_NO_STAT_DATA
+            ) {
               this.updateStatCode(areaCode, propertyType, false);
             }
             continue;
@@ -364,7 +365,7 @@ class MarketStats {
 
           // 3. save the statData to MySql Database
           try {
-            let saveDataResult = await this.saveData(statData);
+            let saveDataResult = await this.saveStatData(statData);
             console.log(saveDataResult);
           } catch (err) {
             this.error = err;
@@ -388,8 +389,13 @@ class MarketStats {
             `Monthly Update (${this.iAreaCodePointer} | ${AreaCodes.length})`
           );
         }
+        console.groupEnd(
+          `GroupEnd::AreaCode ${areaCode} Loop Counter:${
+            j + 1
+          } of ${areaQuantityEveryUpdate}`
+        );
       }
-      console.log("Stats Data Request Task All Done!");
+      console.warn("Stats Data Request Task All Done!");
     }
   }
   // methods
@@ -490,7 +496,7 @@ class MarketStats {
       var statData = {
         saveData: true,
         areaCode: self.areaCode,
-        propertyGroup: self.propertyGroup,
+        propertyType: self.propertyType,
         saveURL: self.saveURL,
         statData: data.Payload,
         deleteOldData: self.deleteOldData,
@@ -528,21 +534,21 @@ class MarketStats {
   searchStatCode(areaCode, groupCode = "") {
     switch (groupCode) {
       case "#0=|":
-        this.propertyGroup = "All";
+        this.propertyType = "All";
         break;
       case "#0=pt:2|":
-        this.propertyGroup = "Detached";
+        this.propertyType = "Detached";
         break;
       case "#0=pt:8|":
-        this.propertyGroup = "Townhouse";
+        this.propertyType = "Townhouse";
         break;
       case "#0=pt:4|":
-        this.propertyGroup = "Apartment";
+        this.propertyType = "Apartment";
         break;
     }
     var AreaCode = {
       areaCode: areaCode,
-      propertyType: this.propertyGroup,
+      propertyType: this.propertyType,
       saveData: false,
     };
     chrome.runtime.sendMessage(AreaCode, (res) => {
@@ -564,30 +570,18 @@ class MarketStats {
     let date = new Date();
     let statCode;
     // Translate the StatsCentre group code to Property type
-    switch (groupCode) {
-      case "#0=|":
-        this.propertyGroup = "All";
-        break;
-      case "#0=pt:2|":
-        this.propertyGroup = "Detached";
-        break;
-      case "#0=pt:8|":
-        this.propertyGroup = "Townhouse";
-        break;
-      case "#0=pt:4|":
-        this.propertyGroup = "Apartment";
-        break;
-    }
-    var AreaCode = {
+    this.propertyType = getPropertyType(groupCode);
+
+    var AreaCodeInfo = {
       areaCode: areaCode,
-      propertyType: this.propertyGroup,
-      monthlyUpdate: true,
-      statMonth: date.getMonth(),
-      statYear: date.getFullYear(),
-      saveData: false,
+      propertyType: this.propertyType,
+      // monthlyUpdate: true,
+      // statMonth: date.getMonth(),
+      // statYear: date.getFullYear(),
+      action: "Search Stat Code",
     };
 
-    let statCodeInfo = await searchStatCodePromise.call(this, AreaCode);
+    let statCodeInfo = await searchStatCodePromise.call(this, AreaCodeInfo);
 
     if (
       typeof statCodeInfo === "string" &&
@@ -605,19 +599,6 @@ class MarketStats {
     }
     // return promise value
     return Promise.resolve(statCodeInfo);
-
-    // Promise Functions Wrapper for chrome.runtime.sendMessage
-    // function sendMessagePromise(AreaCode) {
-    //   return new Promise((resolve, reject) => {
-    //     chrome.runtime.sendMessage(AreaCode, async (res) => {
-    //       if (res > 0) {
-    //         resolve(res);
-    //       } else {
-    //         reject("error: AreaCode - StatCode Could not be find!");
-    //       }
-    //     });
-    //   });
-    // }
   }
 
   async requestStatData(selectedOptions, globalRequestParams) {
@@ -627,64 +608,48 @@ class MarketStats {
     requestData = $.extend({ op: "d" }, selectedOptions, globalRequestParams);
     // Initial send request
     let statInfo;
-    let statInfoTemp = [];
-    let requestTries = REQUEST_TRIES; // two tries: 0 , 1
-    try {
-      // set 3 tries, if stats data is not correct try once more
-      for (let i = 0; i < requestTries; i++) {
-        statInfoTemp = [];
+    // Per Request_Tries, if stats data is not correct try once more
+    for (let i = 0; i < REQUEST_TRIES; i++) {
+      try {
         //statInfo = await sendRequest(requestData);
         statInfo = await ajaxStatDataPromise.call(
           this,
           requestData,
           currentDataRequest
         );
-        statInfo = await processStatData.call(this, statInfo.Payload);
-        if (statInfo instanceof Error) {
-          if (i === requestTries - 1) {
-            statInfo.message = ERROR_MESSAGE_DATA_FAILED;
-            console.log(`Last DataRequest Try:`, statInfo.message);
+      } catch (err) {
+        // fatal errors:
+        console.log("ProcessDataRequest Fatal Error:", err.message);
+        statInfo = new Error(ERROR_MESSAGE_DATA_FATAL);
+      }
+
+      statInfo = await processStatData.call(this, statInfo.Payload);
+
+      if (statInfo.status === "OK") {
+        // Stat Data Request and Process Succeed
+        return Promise.resolve(statInfo);
+      } else {
+        if (statInfo.status === "NO_DATA") {
+          if (i === REQUEST_TRIES - 1) {
+            console.log(`Last DataRequest Try:`, statInfo.err.message);
+            return Promise.reject(statInfo.err);
           } else {
-            console.log(`[${i + 1}] DataRequest Try:`, statInfo.message);
+            console.log(`[${i + 1}] Try More Requests:`, statInfo.err.message);
           }
         } else {
-          console.log(ERROR_MESSAGE_DATA_OK);
-          break; // if no error, jump out the Loop
+          return Promise.reject(statInfo.err);
         }
       }
-    } catch (err) {
-      // fatal errors:
-      console.log("ProcessDataRequest Fatal Error:", err.message);
-      statInfo = new Error(ERROR_MESSAGE_DATA_FATAL);
     }
-
-    return new Promise((resolve, reject) => {
-      if (statInfo instanceof Error) {
-        this.error = new Error(ERROR_MESSAGE_DATA_FAILED);
-        reject(statInfo);
-      } else {
-        resolve(statInfo);
-      }
-    });
   }
 
-  async saveData(statData) {
-    if (!statData.statData) {
+  async saveStatData(statDataInfo) {
+    if (!statDataInfo.statData) {
       console.log("stat read error!");
       return;
     }
-    let saveStatDataResult = await sendMessagePromise(statData);
+    let saveStatDataResult = await sendMessagePromise(statDataInfo);
     return Promise.resolve(saveStatDataResult);
-
-    // Promise wrapper for chrome.runtime.sendMessage()
-    function sendMessagePromise(statData) {
-      return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(statData, (res) => {
-          res = res.trim();
-          resolve(res);
-        });
-      });
-    }
   }
 
   async updateStatCode(areaCode, propertyType, hasStatData) {
@@ -692,20 +657,10 @@ class MarketStats {
       areaCode: areaCode,
       propertyType: propertyType,
       hasStatData: hasStatData,
-      action: "updateStatCode",
+      action: "Update Stat Code",
     };
     let updateStatDataResult = await sendMessagePromise(statCodeInfo);
     return Promise.resolve(updateStatDataResult);
-
-    // Promise wrapper for chrome.runtime.sendMessage()
-    function sendMessagePromise(statCodeInfo) {
-      return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(statCodeInfo, (res) => {
-          res.stat_code = res.stat_code.trim();
-          resolve(res);
-        });
-      });
-    }
   }
 
   copyTextToClipboard(text) {

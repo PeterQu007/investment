@@ -38,42 +38,22 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       },
     });
   }
-  if (request.areaCode && !request.saveData) {
-    // if (!request.saveData) {
-    //   $.ajax({
-    //     url: "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php",
-    //     method: "post",
-    //     data: request,
-    //     success: function (res) {
-    //       console.log(res);
-    //       sendResponse(res);
-    //     },
-    //   });
-    // }
-    getStatCode(request).then((res) => sendResponse(res));
-  }
-  if (request.saveData) {
-    if (request.saveData) {
-      // $.ajax({
-      //   url: request.saveURL,
-      //   method: "post",
-      //   data: request,
-      //   success: function (res) {
-      //     console.log(res);
-      //     sendResponse(res);
-      //   },
-      // });
 
-      saveStatData(request).then((res) => sendResponse(res));
-    }
+  if (request.action && request.action === "Search Stat Code") {
+    searchStatCode(request).then((res) => sendResponse(res));
   }
-  if (request.action && request.action === "updateStatCode") {
+
+  if (request.action && request.action === "Save Stat Data") {
+    saveStatData(request).then((res) => sendResponse(res));
+  }
+
+  if (request.action && request.action === "Update Stat Code") {
     updateStatCode(request).then((res) => sendResponse(res));
   }
   return true;
 });
 
-async function getStatCode(postData) {
+async function searchStatCode(postData) {
   //areaCode -> statCode, example: VPMCP -> 5243
   const options = {
     method: "POST",
@@ -118,7 +98,7 @@ async function saveStatData(postData) {
   let res = await fetch(url, options); // PHP should return json object, by json_decode()
   const saveDataResult = await res.json();
   console.log(
-    `${postData.areaCode}:${postData.propertyGroup}:${saveDataResult}`
+    `${postData.areaCode}:${postData.propertyType}:${saveDataResult}`
   );
   return Promise.resolve(saveDataResult);
 }
@@ -146,3 +126,30 @@ chrome.storage.local.set(
     console.log(GoogleFinRefreshCounter);
   }
 );
+
+// ##############################
+// recycles
+
+// #1. ajax call
+// if (!request.saveData) {
+//   $.ajax({
+//     url: "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php",
+//     method: "post",
+//     data: request,
+//     success: function (res) {
+//       console.log(res);
+//       sendResponse(res);
+//     },
+//   });
+// }
+
+// #2. ajax call
+// $.ajax({
+//   url: request.saveURL,
+//   method: "post",
+//   data: request,
+//   success: function (res) {
+//     console.log(res);
+//     sendResponse(res);
+//   },
+// });
