@@ -202,7 +202,7 @@ class MarketStatsUI {
     // set event for 'Read All 4 Groups' Button
     $("#pid_read_stat_All_Groups").on("click", () => {
       let areaCode = this.getAreaCode();
-      this.marketStatsUpdate.specAreaStatUpdate(
+      this.marketStatsUpdate.updateSpecAreaStats(
         StatsPeriod.max_update,
         areaCode
       );
@@ -211,7 +211,7 @@ class MarketStatsUI {
     $("#pid_read_stat_All").on("click", () => {
       let areaCode = this.getAreaCode();
       let groupCode = GetGroupCode("All");
-      this.marketStatsUpdate.specGroupStatUpdate(
+      this.marketStatsUpdate.updateSpecGroupStats(
         StatsPeriod.max_update,
         areaCode,
         groupCode
@@ -221,7 +221,7 @@ class MarketStatsUI {
     $("#pid_read_stat_Detached").on("click", () => {
       let areaCode = this.getAreaCode();
       let groupCode = GetGroupCode("Detached"); //"#0=pt:2|";
-      this.marketStatsUpdate.specGroupStatUpdate(
+      this.marketStatsUpdate.updateSpecGroupStats(
         StatsPeriod.max_update,
         areaCode,
         groupCode
@@ -231,7 +231,7 @@ class MarketStatsUI {
     $("#pid_read_stat_Townhouse").on("click", () => {
       let areaCode = this.getAreaCode();
       let groupCode = GetGroupCode("Townhouse");
-      this.marketStatsUpdate.specGroupStatUpdate(
+      this.marketStatsUpdate.updateSpecGroupStats(
         StatsPeriod.max_update,
         areaCode,
         groupCode
@@ -241,7 +241,7 @@ class MarketStatsUI {
     $("#pid_read_stat_Condo").on("click", () => {
       let areaCode = this.getAreaCode();
       let groupCode = GetGroupCode("Apartment"); //"#0=pt:4|";
-      this.marketStatsUpdate.specGroupStatUpdate(
+      this.marketStatsUpdate.updateSpecGroupStats(
         StatsPeriod.max_update,
         areaCode,
         groupCode
@@ -249,7 +249,7 @@ class MarketStatsUI {
     });
     // set event for 'Monthly Update(#|#)' Button
     $("#pid_update_stat").on("click", () =>
-      this.marketStatsUpdate.monthlyStatUpdate()
+      this.marketStatsUpdate.updateMonthlyStats()
     );
     // area code change
     if ($(`div.inputWrap input.acInput`).length > 0) {
@@ -311,7 +311,7 @@ class MarketStatsUI {
     if (areaCode == "F80" && cityName == "Mission") {
       areaCode = "F80A";
     }
-    // repair white Rock, F54 -> F54A
+    // repair White Rock, F54 -> F54A
     if (areaCode == "F54" && cityName == "White Rock") {
       areaCode = "F54A";
     }
@@ -352,7 +352,7 @@ class MarketStatsUpdate {
   }
 
   // update the stats data for a specific group of one selected Area
-  async specGroupStatUpdate(statDataPeriod, areaCode, groupCode) {
+  async updateSpecGroupStats(statDataPeriod, areaCode, groupCode) {
     let propertyType = GetPropertyType(groupCode);
     let statData;
     console.group(
@@ -369,7 +369,6 @@ class MarketStatsUpdate {
       }
     } catch (err) {
       this.error = err;
-      console.error(areaCode, groupCode, err);
       return;
     }
 
@@ -410,19 +409,19 @@ class MarketStatsUpdate {
   }
 
   // stat data Update for all 4 groups of a specific areaCode
-  async specAreaStatUpdate(statDataPeriod, areaCode) {
+  async updateSpecAreaStats(statDataPeriod, areaCode) {
     console.log("Specific Area Update Button Clicked");
 
     this.error = new Error(ERROR_MESSAGE_NO_ERROR);
     for (let index = 0; index < GroupCodes.length; index++) {
       let groupCode = GroupCodes[index];
-      await this.specGroupStatUpdate(statDataPeriod, areaCode, groupCode);
+      await this.updateSpecGroupStats(statDataPeriod, areaCode, groupCode);
     }
   }
 
   //
   // NEW stat data monthly update
-  monthlyStatUpdate() {
+  updateMonthlyStats() {
     console.log("Monthly Update Button Clicked");
     let i = 0;
     let iAreaCodePointer = 0;
@@ -450,7 +449,7 @@ class MarketStatsUpdate {
           `AreaCode ${areaCode} Loop:#${j + 1} of ${areaQuantityEveryUpdate}`
         );
         //loop all groups
-        await this.specAreaStatUpdate(StatsPeriod.monthly_update, areaCode);
+        await this.updateSpecAreaStats(StatsPeriod.monthly_update, areaCode);
 
         if (
           this.error.message === ERROR_MESSAGE_NO_ERROR ||
@@ -484,24 +483,23 @@ class MarketStatsUpdate {
       action: "Search Stat Code",
     };
 
-    let statCodeInfo = await searchStatCodePromise.call(this, AreaCodeInfo);
+    try {
+      let statCodeInfo = await searchStatCodePromise.call(this, AreaCodeInfo);
+      statCode = statCodeInfo.stat_code;
+      // normalize the statCode
 
-    if (
-      typeof statCodeInfo === "string" &&
-      statCodeInfo.indexOf("error") > -1
-    ) {
+      if (typeof statCode === "string") {
+        statCode = statCode.replace(/[\W_]+/g, ""); // remove all non-word character[^a-zA-Z0-9_] and '_' from the result
+      } else {
+        statCode = statCode;
+      }
+      // return promise value
+      return Promise.resolve(statCodeInfo);
+    } catch (err) {
       // catch errors
-      return Promise.reject(statCodeInfo);
+      console.error(`searchStatCode Failed:${areaCode}, ${groupCode}, ${err}`);
+      return Promise.reject(err);
     }
-    // normalize the statCode
-    statCode = statCodeInfo.stat_code;
-    if (typeof statCode === "string") {
-      statCode = statCode.replace(/[\W_]+/g, ""); // remove all non-word character[^a-zA-Z0-9_] and '_' from the result
-    } else {
-      statCode = statCode;
-    }
-    // return promise value
-    return Promise.resolve(statCodeInfo);
   }
 
   async requestStatData(selectedOptions, globalRequestParams) {

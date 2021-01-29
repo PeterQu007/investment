@@ -16,10 +16,10 @@ function searchStatCodePromise(AreaCodeInfo) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(AreaCodeInfo, async (statCodeInfo) => {
       // statCodeInfo include fields: stat_code and All, Detached, Townhouse, Apartment (stat data availabilities)
-      if ("stat_code" in statCodeInfo || stateCodeInfo.stat_code) {
+      if ("stat_code" in statCodeInfo && statCodeInfo.stat_code) {
         resolve(statCodeInfo);
       } else {
-        reject("error: AreaCode - StatCode Could not be find!");
+        reject(`${statCodeInfo.errorMessage}`);
       }
     });
   });

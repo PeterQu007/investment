@@ -40,7 +40,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 
   if (request.action && request.action === "Search Stat Code") {
-    searchStatCode(request).then((res) => sendResponse(res));
+    searchStatCode(request)
+      .then((res) => sendResponse(res))
+      .catch((err) => sendResponse(err));
   }
 
   if (request.action && request.action === "Save Stat Data") {
@@ -64,9 +66,14 @@ async function searchStatCode(postData) {
   };
   const url =
     "http://localhost/pidrealty4/wp-content/themes/realhomes-child-3/db/data.php";
-  const res = await fetch(url, options);
-  const statCode = await res.json();
-  return Promise.resolve(statCode);
+  try {
+    const res = await fetch(url, options);
+    const statCode = await res.json();
+    return Promise.resolve(statCode);
+  } catch (err) {
+    let error = { stat_code: null, errorMessage: err.message };
+    return Promise.reject(error);
+  }
 }
 
 async function updateStatCode(postData) {

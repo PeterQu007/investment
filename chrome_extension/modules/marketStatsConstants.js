@@ -40,11 +40,11 @@ const AreaCodes = [
   "F40",
   "F50",
   "F54A",
-  "F60",
+  "F60A",
   "F70A",
   "F80A",
-  "VBU",
-  "VVA",
+  "VBU", // Burnaby
+  "VVA", // Vancouver
   "VBD",
   "VBE",
   "VBN",
